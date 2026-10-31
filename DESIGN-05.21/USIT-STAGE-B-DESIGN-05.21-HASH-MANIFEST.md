@@ -1,0 +1,31 @@
+# USIT-STAGE-B-DESIGN-05.21-HASH-MANIFEST｜交付文件 SHA-256 清单
+
+> 阶段 B · DESIGN-05.21 · 哈希清单（单向，不含 ZIP 自身）
+> 生成：2026-10-31（GMT+8）
+> 哈希算法：SHA-256
+
+---
+
+## 交付文件（6 份主文档）
+
+| 文件 | 字节数 | SHA-256 |
+|------|--------|---------|
+| USIT-STAGE-B-DESIGN-05.21.md | 39879 | dc251cb7c4412764627f4c0470c25dc0c93020f581301359a61645794220167a |
+| USIT-STAGE-B-DESIGN-05.21-ISSUES.md | 2651 | b8b96b2184146160135b286ee45113108cff1e34b379bf8115c698d228d1457a |
+| USIT-STAGE-B-DESIGN-05.21-DIFF.md | 2827 | eedce0fa6a4f3da83e193a8a41c60b35bd82a7fb4f149b6ace73c74841813ef6 |
+| USIT-STAGE-B-DESIGN-05.21-CROSS-REVIEW.md | 3181 | 9764029309d7e47ac1a44223331d524b2a98704f0857e0c1fa998bccccdcd6de |
+| USIT-STAGE-B-DESIGN-05.21-EXECUTION-REPORT.md | 5826 | 0cd69cb6ded490fbbfb5412f8cf71a42119a6e6f6d20e40a485f7cecf449fc13 |
+| USIT-STAGE-B-DESIGN-05.21-HASH-MANIFEST.md | （见 RECEIPT）| （见 RECEIPT）|
+
+## 分层清单说明（避免循环自引用）
+
+- 本 MANIFEST 记录前 6 份主文档哈希，**不记录自身哈希**；
+- 本 MANIFEST 哈希记录在 HASH-RECEIPT.md（外部封存回执）中；
+- ZIP 哈希与字节数记录在 RECEIPT 中（ZIP 外部，不写入 MANIFEST）；
+- 分层顺序：MANIFEST（记文档）→ RECEIPT（记 MANIFEST + ZIP）→ 最终答复（记 ZIP）。
+
+## Git Blob SHA 声明
+
+本清单所有哈希均为 **SHA-256**，非 Git Blob SHA-1，二者不得混用。
+
+---
