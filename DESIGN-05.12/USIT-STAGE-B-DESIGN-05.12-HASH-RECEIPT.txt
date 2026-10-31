@@ -1,0 +1,11 @@
+receipt_version: 1
+manifest_filename: USIT-STAGE-B-DESIGN-05.12-HASH-MANIFEST.md
+manifest_size_bytes: 1418
+manifest_sha256: bb7fea2b3f6b4566228cdf0dd49d244cff8dfaf8ff9b6655d6db9d5877f24c78
+hash_algorithm: SHA-256
+generated_at: 2026-10-31T10:45:00+08:00
+source_workspace: C:\Users\Administrator\WorkBuddy\2026-10-15-22-09-47\usit_p0
+verification_status: NOT_VERIFIED
+verification_method: local-self-check-only-not-independent
+verification_subject: executor-local
+verification_limit: no-independent-third-party-verification-performed
