@@ -1,0 +1,444 @@
+{
+  "version": "DESIGN-05.44",
+  "raw_entry_total": 26,
+  "unique_id_total": 26,
+  "unique_defect_total": 26,
+  "status_counts": {
+    "PASS": 15,
+    "FAIL": 9,
+    "NOT_PROVEN": 2,
+    "NOT_TESTED_RUNTIME": 0
+  },
+  "category_counts": {
+    "TXN_ORDER_AND_WAL_REPLAY": 4,
+    "REQUEST_ID_ATOMIC_IDEMPOTENCY": 6,
+    "RECOVERY_BARRIER_AND_ADMISSION": 4,
+    "RESOURCE_RELEASE_SERIALIZATION": 5,
+    "POST_COMMIT_FAILURE_CLOSURE": 6,
+    "COUNTEREXAMPLE_REDESIGN": 1
+  },
+  "cases": [
+    {
+      "case_id": "B44-ORD-001",
+      "category": "TXN_ORDER_AND_WAL_REPLAY",
+      "preconditions": "线程 A 先取 txn_id=100 但未进锁，线程 B 取 101 先进锁提交",
+      "actors": "线程 A + 线程 B",
+      "execution_steps": [
+        "A 取 txn_id=100 未进锁",
+        "B 取 txn_id=101 进锁提交 commit_seq=1",
+        "A 后进锁提交 commit_seq=2"
+      ],
+      "expected_result": "恢复按 commit_seq 升序 1→2，与 txn_id 无关",
+      "design_result": "05.43 缺陷：按 txn_id 100→101 恢复，顺序反转(FAIL)；05.44 commit_seq 在锁内分配单调，恢复按 commit_seq(PASS)",
+      "evidence_refs": "TXN-ORDER-AND-WAL-REPLAY.md §2/§4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-ORD-002",
+      "category": "TXN_ORDER_AND_WAL_REPLAY",
+      "preconditions": "COMMIT 记录保存候选快照，后提交事务覆盖",
+      "actors": "两个事务",
+      "execution_steps": [
+        "事务 X 提交 commit_seq=1 快照 S1",
+        "事务 Y 提交 commit_seq=2 快照 S2",
+        "崩溃恢复"
+      ],
+      "expected_result": "按 commit_seq 升序重放 S1→S2，结果与提交一致",
+      "design_result": "05.43 缺陷：可能 S1 覆盖 S2(FAIL)；05.44 commit_seq 单调 + 快照重放(PASS)",
+      "evidence_refs": "TXN-ORDER-AND-WAL-REPLAY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-ORD-003",
+      "category": "TXN_ORDER_AND_WAL_REPLAY",
+      "preconditions": "同 commit_seq 出现多条 COMMIT",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "分组检测",
+        "多条 COMMIT 相同 commit_seq"
+      ],
+      "expected_result": "ISOLATED，禁止 first_commit 静默选取",
+      "design_result": "05.43 缺陷：first_commit 静默选取(FAIL)；05.44 ISOLATED(PASS)",
+      "evidence_refs": "TXN-ORDER-AND-WAL-REPLAY.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-ORD-004",
+      "category": "TXN_ORDER_AND_WAL_REPLAY",
+      "preconditions": "COMMIT 记录快照 checksum 损坏",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "分组扫描",
+        "snapshot_corrupted 检测"
+      ],
+      "expected_result": "ISOLATED",
+      "design_result": "05.44 正确：快照一致性校验(PASS)",
+      "evidence_refs": "TXN-ORDER-AND-WAL-REPLAY.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-ID-001",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "两个线程同时收到相同 req_id，锁外查询不存在",
+      "actors": "线程 A + 线程 B",
+      "execution_steps": [
+        "A 锁外 lookup 不存在",
+        "B 锁外 lookup 不存在",
+        "A 进锁提交",
+        "B 后进锁未重新查询"
+      ],
+      "expected_result": "05.43 缺陷：B 重复提交(FAIL)；05.44 锁内查询，B 返回 ALREADY_PROCESSED(PASS)",
+      "design_result": "05.43 缺陷暴露",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §1/§3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-ID-002",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "req_id 已存在但操作类型不同",
+      "actors": "事务",
+      "execution_steps": [
+        "锁内查询 req_id 已存在",
+        "操作类型 ADMIT vs RELEASE"
+      ],
+      "expected_result": "CONFLICT_OP_TYPE → ISOLATED",
+      "design_result": "05.44 正确：冲突规则(PASS)",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-ID-003",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "req_id 已存在但 owner 不同",
+      "actors": "事务",
+      "execution_steps": [
+        "锁内查询 req_id 已存在",
+        "owner 不匹配"
+      ],
+      "expected_result": "CONFLICT_OWNER → ISOLATED",
+      "design_result": "05.44 正确：冲突规则(PASS)",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-ID-004",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "req_id 已存在但 resource 不同",
+      "actors": "事务",
+      "execution_steps": [
+        "锁内查询 req_id 已存在",
+        "resource 不匹配"
+      ],
+      "expected_result": "CONFLICT_RESOURCE → ISOLATED",
+      "design_result": "05.44 正确：冲突规则(PASS)",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-ID-005",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "req_id 已存在但 payload 不同",
+      "actors": "事务",
+      "execution_steps": [
+        "锁内查询 req_id 已存在",
+        "payload 不匹配"
+      ],
+      "expected_result": "CONFLICT_PAYLOAD → ISOLATED",
+      "design_result": "05.44 正确：冲突规则(PASS)",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-ID-006",
+      "category": "REQUEST_ID_ATOMIC_IDEMPOTENCY",
+      "preconditions": "req_id 占用后崩溃",
+      "actors": "事务",
+      "execution_steps": [
+        "req_id 已占用",
+        "崩溃",
+        "恢复"
+      ],
+      "expected_result": "恢复从 WAL 判断 COMMIT 状态，无 COMMIT 则 ISOLATED",
+      "design_result": "05.44 正确：崩溃恢复规则(PASS)",
+      "evidence_refs": "REQUEST-ID-ATOMIC-IDEMPOTENCY.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-BAR-001",
+      "category": "RECOVERY_BARRIER_AND_ADMISSION",
+      "preconditions": "事务检查 in_recovery=False 后、获取锁前恢复启动",
+      "actors": "事务 + 恢复",
+      "execution_steps": [
+        "事务检查 False",
+        "恢复设置 True 开始恢复",
+        "事务获取锁进入 WAL 修改"
+      ],
+      "expected_result": "05.43 缺陷：TOCTOU，并发恢复与 WAL 修改(FAIL)；05.44 barrier_lock + 计数器，同锁原子(PASS)",
+      "design_result": "05.43 缺陷暴露",
+      "evidence_refs": "RECOVERY-BARRIER-AND-ADMISSION.md §1/§2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-BAR-002",
+      "category": "RECOVERY_BARRIER_AND_ADMISSION",
+      "preconditions": "恢复启动时存在在途事务",
+      "actors": "恢复 + 在途事务",
+      "execution_steps": [
+        "恢复设置 barrier_flag",
+        "阻塞等待 in_flight_count 归零",
+        "在途事务退出"
+      ],
+      "expected_result": "恢复排空在途事务后才执行",
+      "design_result": "05.44 正确：排空等待(PASS)",
+      "evidence_refs": "RECOVERY-BARRIER-AND-ADMISSION.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-BAR-003",
+      "category": "RECOVERY_BARRIER_AND_ADMISSION",
+      "preconditions": "恢复中断，屏障未解除",
+      "actors": "恢复",
+      "execution_steps": [
+        "恢复中断",
+        "barrier_flag 保持 True"
+      ],
+      "expected_result": "新事务继续阻塞，ISOLATED",
+      "design_result": "05.44 正确：屏障保持(PASS)",
+      "evidence_refs": "RECOVERY-BARRIER-AND-ADMISSION.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-BAR-004",
+      "category": "RECOVERY_BARRIER_AND_ADMISSION",
+      "preconditions": "跨进程恢复屏障",
+      "actors": "跨进程进程",
+      "execution_steps": [
+        "跨进程恢复屏障一致性"
+      ],
+      "expected_result": "无法证明，NOT_PROVEN",
+      "design_result": "05.44 维持 NOT_PROVEN，DENY",
+      "evidence_refs": "RECOVERY-BARRIER-AND-ADMISSION.md §7",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "NOT_PROVEN"
+    },
+    {
+      "case_id": "B44-RES-001",
+      "category": "RESOURCE_RELEASE_SERIALIZATION",
+      "preconditions": "两个相同 req_id 并发请求，同时通过幂等查询",
+      "actors": "线程 A + 线程 B",
+      "execution_steps": [
+        "A 查询幂等不存在",
+        "B 查询幂等不存在",
+        "A 执行 operation",
+        "B 执行 operation"
+      ],
+      "expected_result": "05.43 缺陷：operation 执行两次(FAIL)；05.44 锁内查询，B 返回 ALREADY_PROCESSED(PASS)",
+      "design_result": "05.43 缺陷暴露",
+      "evidence_refs": "RESOURCE-RELEASE-SERIALIZATION.md §1/§3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-RES-002",
+      "category": "RESOURCE_RELEASE_SERIALIZATION",
+      "preconditions": "Owner 校验通过后、operation 执行前被接管",
+      "actors": "旧Owner + 新Owner",
+      "execution_steps": [
+        "旧Owner 授权校验通过",
+        "新Owner 接管推进 generation",
+        "旧Owner 执行 operation"
+      ],
+      "expected_result": "旧Owner token generation 不匹配，拒绝",
+      "design_result": "05.44 正确：串行化在同一资源锁，generation 拒绝(PASS)",
+      "evidence_refs": "RESOURCE-RELEASE-SERIALIZATION.md §2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-RES-003",
+      "category": "RESOURCE_RELEASE_SERIALIZATION",
+      "preconditions": "跨进程资源锁",
+      "actors": "跨进程进程",
+      "execution_steps": [
+        "跨进程资源锁一致性"
+      ],
+      "expected_result": "无法证明，NOT_PROVEN",
+      "design_result": "05.44 维持 NOT_PROVEN，ISOLATED",
+      "evidence_refs": "RESOURCE-RELEASE-SERIALIZATION.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "NOT_PROVEN"
+    },
+    {
+      "case_id": "B44-RES-004",
+      "category": "RESOURCE_RELEASE_SERIALIZATION",
+      "preconditions": "operation 部分成功",
+      "actors": "资源",
+      "execution_steps": [
+        "operation 执行部分副作用",
+        "崩溃"
+      ],
+      "expected_result": "预留+确认机制判断，ISOLATED 或重放",
+      "design_result": "05.44 正确：预留+确认机制(PASS)",
+      "evidence_refs": "RESOURCE-OPERATION-CRASH-RECOVERY.md §2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-RES-005",
+      "category": "RESOURCE_RELEASE_SERIALIZATION",
+      "preconditions": "operation 非幂等且预留失败",
+      "actors": "资源",
+      "execution_steps": [
+        "预留记录未持久化",
+        "崩溃"
+      ],
+      "expected_result": "ISOLATED，不自动重放",
+      "design_result": "05.44 正确：预留失败 → ISOLATED(PASS)",
+      "evidence_refs": "RESOURCE-OPERATION-CRASH-RECOVERY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-PC-001",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "publish_atomic 抛异常",
+      "actors": "事务",
+      "execution_steps": [
+        "COMMIT 成功",
+        "publish_atomic 抛异常"
+      ],
+      "expected_result": "mark_committed_pending_apply 处理",
+      "design_result": "05.44 正确：原子发布 + 异常处理(PASS)",
+      "evidence_refs": "POST-COMMIT-FAILURE-CLOSURE.md §2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-PC-002",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "mark_committed_pending_apply 自身失败",
+      "actors": "事务",
+      "execution_steps": [
+        "publish_atomic 异常",
+        "mark 失败"
+      ],
+      "expected_result": "第二层 WAL 写入，第三层进程标记，UNKNOWN",
+      "design_result": "05.43 缺陷：无第二层处理(FAIL)；05.44 三层失败处理(PASS)",
+      "evidence_refs": "POST-COMMIT-FAILURE-CLOSURE.md §2/§6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-PC-003",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "wal_append(APPLY) 抛异常",
+      "actors": "事务",
+      "execution_steps": [
+        "COMMIT 成功",
+        "APPLY 记录写入失败"
+      ],
+      "expected_result": "COMMITTED_PENDING_APPLY，不向上抛",
+      "design_result": "05.43 缺陷：直接抛异常(FAIL)；05.44 COMMITTED_PENDING_APPLY(PASS)",
+      "evidence_refs": "POST-COMMIT-FAILURE-CLOSURE.md §2/§6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-PC-004",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "query_txn 校验 COMMIT/APPLY 一致性",
+      "actors": "查询接口",
+      "execution_steps": [
+        "scan_wal_for",
+        "校验 commit_seq 一致性"
+      ],
+      "expected_result": "校验失败 → ISOLATED",
+      "design_result": "05.44 正确：一致性校验(PASS)",
+      "evidence_refs": "POST-COMMIT-FAILURE-CLOSURE.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-PC-005",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "persist_isolation_record 持久化失败",
+      "actors": "隔离记录",
+      "execution_steps": [
+        "隔离记录持久化失败"
+      ],
+      "expected_result": "三层失败处理，ISOLATED",
+      "design_result": "05.43 缺陷：未定义(FAIL)；05.44 三层失败处理(PASS)",
+      "evidence_refs": "POST-COMMIT-FAILURE-CLOSURE.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B44-PC-006",
+      "category": "POST_COMMIT_FAILURE_CLOSURE",
+      "preconditions": "wal_append(CHECKPOINT) 失败",
+      "actors": "WAL",
+      "execution_steps": [
+        "检查点写入失败"
+      ],
+      "expected_result": "无截断，允许重试",
+      "design_result": "05.44 正确：检查点机制(PASS)",
+      "evidence_refs": "WAL-INTEGRITY-AND-CHECKPOINT.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B44-MIX-001",
+      "category": "COUNTEREXAMPLE_REDESIGN",
+      "preconditions": "反例仅重复文字结论，未从伪代码推演",
+      "actors": "反例生成",
+      "execution_steps": [
+        "生成反例",
+        "仅重复设计文档结论"
+      ],
+      "expected_result": "反例必须从真实伪代码逐步推演",
+      "design_result": "05.44 反例从伪代码推演，发现缺陷必须标 FAIL(PASS)",
+      "evidence_refs": "COUNTEREXAMPLES.json §1",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
