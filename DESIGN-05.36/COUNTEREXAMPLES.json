@@ -1,0 +1,658 @@
+{
+  "design_version": "DESIGN-05.36",
+  "baseline": "DESIGN-05.35 (commit 2a9e985)",
+  "total": 30,
+  "valid": 30,
+  "status_counts": {
+    "PASS": 28,
+    "FAIL": 2
+  },
+  "category_counts": {
+    "MASK_FIELD": 8,
+    "DENIED_ATOMIC": 8,
+    "CLEANUP": 7,
+    "CRASH_RECOVERY": 7
+  },
+  "note": "B36-MASK-002 and B36-CLEANUP-001 are marked FAIL because they document the 05.35 defect (0x7FFE mask; premature _cleanup_done). The 05.36 design fixes both; the FAIL records the historical defect, not a remaining 05.36 defect.",
+  "cases": [
+    {
+      "case_id": "B36-MASK-001",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count=16384, stored field=0x8000"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "get_count(0x8000) using COUNT_MASK"
+      ],
+      "expected_result": "16384 (non-zero count must not be read as zero)",
+      "design_result": "COUNT_MASK=0xFFFE -> (0x8000 & 0xFFFE)>>1 = 16384",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §1, §2"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-002",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count=16384, legacy mask 0x7FFE"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "get_count(0x8000) using 0x7FFE"
+      ],
+      "expected_result": "16384",
+      "design_result": "0x7FFE -> (0x8000 & 0x7FFE)>>1 = 0 (WRONG, 05.35 defect)",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §1"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B36-MASK-003",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count=32767 (max)"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "admit() when count==32767"
+      ],
+      "expected_result": "reject with OVERFLOW",
+      "design_result": "admit() returns OVERFLOW, count stays 32767",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §5, §6"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-004",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count=0"
+      ],
+      "actors": [
+        "release thread"
+      ],
+      "execution_steps": [
+        "release() when count==0"
+      ],
+      "expected_result": "reject with UNDERFLOW",
+      "design_result": "release() returns UNDERFLOW, no borrow into frozen/DENIED",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §6"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-005",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "state has gate=OPEN, count=5, frozen=0, DENIED=0"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "naive 'state + 1' increment"
+      ],
+      "expected_result": "must not corrupt gate/frozen/DENIED fields",
+      "design_result": "field-aware CAS uses + (1<<1)=2, only count field changes",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §3"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-006",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count field=0x8000 (16384), want +1"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "increment from 16384 to 16385"
+      ],
+      "expected_result": "16385, gate/frozen/DENIED unchanged",
+      "design_result": "0x8000 + 0x0002 = 0x8002 -> get_count=16385",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-007",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "count=16383, field=0x7FFE"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "increment 16383 -> 16384"
+      ],
+      "expected_result": "16384, no wrap",
+      "design_result": "0x7FFE + 0x0002 = 0x8000 -> get_count(0xFFFE)=16384",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-MASK-008",
+      "category": "MASK_FIELD",
+      "preconditions": [
+        "state has DENIED=1, count=3"
+      ],
+      "actors": [
+        "release thread"
+      ],
+      "execution_steps": [
+        "release() decrements count while DENIED set"
+      ],
+      "expected_result": "count decrements to 2, DENIED preserved (not cleared)",
+      "design_result": "release() only touches count field via mask, DENIED_MASK untouched",
+      "evidence_refs": [
+        "ATOMIC-STATE-WORD.md §3, STATE-TRANSITION-MATRIX.md §3"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-001",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "gate=CLOSED, count=0, frozen=0, DENIED=0"
+      ],
+      "actors": [
+        "thread A (cas_frozen)",
+        "thread B (set_denied)"
+      ],
+      "execution_steps": [
+        "A reads cur(no DENIED); B sets DENIED=1; A CAS fails, re-reads, sees DENIED"
+      ],
+      "expected_result": "frozen must NOT be set when DENIED=1",
+      "design_result": "cas_frozen re-checks DENIED in same CAS, returns 'DENIED'",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §2, §3-T1"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-002",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "frozen=1, DENIED=0"
+      ],
+      "actors": [
+        "thread A (unfreeze)",
+        "thread B (set_denied)"
+      ],
+      "execution_steps": [
+        "A reads frozen=1/DENIED=0; B sets DENIED=1; A CAS fails, re-reads DENIED=1"
+      ],
+      "expected_result": "unfreeze must be rejected, DENIED preserved",
+      "design_result": "unfreeze precondition DENIED==0 fails, returns rejected",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §3-T2"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-003",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "frozen=1, DENIED=0"
+      ],
+      "actors": [
+        "thread A (rollback)",
+        "thread B (set_denied)"
+      ],
+      "execution_steps": [
+        "A attempts rollback frozen->0; B sets DENIED=1 concurrently"
+      ],
+      "expected_result": "rollback must not clear DENIED",
+      "design_result": "rollback precondition DENIED==0 fails, DENIED stays 1",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §3-T3"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-004",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "recovery path rebuilding state word"
+      ],
+      "actors": [
+        "recovery thread",
+        "thread B (set_denied)"
+      ],
+      "execution_steps": [
+        "recovery reads DENIED=0, prepares OPEN; B sets DENIED=1; recovery re-checks before commit"
+      ],
+      "expected_result": "recovery must not restore OPEN over DENIED",
+      "design_result": "recovery re-validates DENIED before final CAS, aborts OPEN",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §3-T4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-005",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "DENIED=0"
+      ],
+      "actors": [
+        "thread A (set_denied)",
+        "thread B (set_denied)"
+      ],
+      "execution_steps": [
+        "both set DENIED=1 concurrently"
+      ],
+      "expected_result": "DENIED=1 must not be lost",
+      "design_result": "set_denied is idempotent (nv |= DENIED_MASK), final DENIED=1",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §3-T5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-006",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "DENIED=1, gate=OPEN (transient S3)"
+      ],
+      "actors": [
+        "admit thread"
+      ],
+      "execution_steps": [
+        "admit() while DENIED=1"
+      ],
+      "expected_result": "admit must be rejected even if gate still OPEN",
+      "design_result": "admit precondition includes DENIED==0, returns 'DENIED'",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-007",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "DENIED=1, frozen=0"
+      ],
+      "actors": [
+        "reopen thread"
+      ],
+      "execution_steps": [
+        "reopen() attempts OPEN"
+      ],
+      "expected_result": "reopen rejected, DENIED preserved",
+      "design_result": "reopen precondition DENIED==0 fails (STATE-TRANSITION-MATRIX T7)",
+      "evidence_refs": [
+        "STATE-TRANSITION-MATRIX.md §2-T7"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-DENIED-008",
+      "category": "DENIED_ATOMIC",
+      "preconditions": [
+        "DENIED=0, gate=OPEN, count=0"
+      ],
+      "actors": [
+        "thread A (cas_frozen)",
+        "admit thread"
+      ],
+      "execution_steps": [
+        "A sets frozen via cas_frozen but gate==OPEN"
+      ],
+      "expected_result": "frozen must not be set while gate OPEN (illegal S6)",
+      "design_result": "cas_frozen checks gate==CLOSED, returns 'GATE_OPEN'",
+      "evidence_refs": [
+        "DENIED-ATOMIC-PROTECTION.md §2, STATE-TRANSITION-MATRIX.md §1-S6"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-001",
+      "category": "CLEANUP",
+      "preconditions": [
+        "_cleanup_done=False, resource R unreleased"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "set _cleanup_done=True BEFORE releasing R; R release throws"
+      ],
+      "expected_result": [
+        "R must remain retryable, not leaked"
+      ],
+      "design_result": "05.36: _cleanup_done only set at CLEANUP_COMPLETED; R retryable (05.35 defect)",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §1, §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B36-CLEANUP-002",
+      "category": "CLEANUP",
+      "preconditions": [
+        "resource R already released"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "call R.release() twice"
+      ],
+      "expected_result": "second release is no-op, no error",
+      "design_result": "release idempotent: released flag checked, no-op",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-003",
+      "category": "CLEANUP",
+      "preconditions": [
+        "resources R1, R2; R1 release throws (recoverable)"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "release R1 (throws), then R2"
+      ],
+      "expected_result": "R2 still released, R1 failure recorded, state PARTIAL",
+      "design_result": "failed_any=True, R2 released, state CLEANUP_PARTIAL",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-004",
+      "category": "CLEANUP",
+      "preconditions": [
+        "resource R unknown state"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "R.release() raises UnknownStateError"
+      ],
+      "expected_result": "enter ISOLATED, stop retry",
+      "design_result": "uncertain=True, _enter_isolated(), return ISOLATED",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-005",
+      "category": "CLEANUP",
+      "preconditions": [
+        "CLEANUP_PARTIAL with pending resource R"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "call cleanup() again"
+      ],
+      "expected_result": "only unreleased R processed, then COMPLETED",
+      "design_result": "pending filters !released && !uncertain, processes R",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-006",
+      "category": "CLEANUP",
+      "preconditions": [
+        "two threads call cleanup() concurrently"
+      ],
+      "actors": [
+        "thread A",
+        "thread B"
+      ],
+      "execution_steps": [
+        "A and B both enter cleanup"
+      ],
+      "expected_result": "serialized, no double-release, no lost state",
+      "design_result": "_cleanup_lock serializes; single owner at IN_PROGRESS",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CLEANUP-007",
+      "category": "CLEANUP",
+      "preconditions": [
+        "DENIED=1, cleanup running"
+      ],
+      "actors": [
+        "cleanup thread"
+      ],
+      "execution_steps": [
+        "cleanup must not touch DENIED bit"
+      ],
+      "expected_result": "DENIED stays 1 after cleanup",
+      "design_result": "cleanup orthogonal to DENIED; DENIED_MASK untouched",
+      "evidence_refs": [
+        "IDEMPOTENT-CLEANUP-PROTOCOL.md §5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-001",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "cross-process shared state word, live writer P2"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "P1 exited, P2 still writes shared word; recovery resets count to 0"
+      ],
+      "expected_result": "reset must be DENIED (old writer alive)",
+      "design_result": "shared_medium_has_live_writers() true -> DENY",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §4, §5"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-002",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "persistent tx with state=UNKNOWN"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "recovery treats UNKNOWN tx as completed and resets"
+      ],
+      "expected_result": "must isolate, not auto-replay/clear",
+      "design_result": "UNKNOWN -> ISOLATED, DENY reset",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §6"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-003",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "persistent tx COMMITTED_UNCONFIRMED"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "recovery auto-replays unconfirmed commit"
+      ],
+      "expected_result": "must not auto-replay; isolate",
+      "design_result": "COMMITTED_UNCONFIRMED -> isolate, no replay",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §6"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-004",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "single-process atomic word, process exits"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "process exited, in-process word gone; reset count"
+      ],
+      "expected_result": "safe to reset (no shared writer)",
+      "design_result": "in-process medium disappears with process, reset safe",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §1, §4"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-005",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "QUARANTINED receipt"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "recovery uses QUARANTINED receipt for success confirmation"
+      ],
+      "expected_result": "must not; QUARANTINED stays isolated",
+      "design_result": "QUARANTINED not counted as success",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §6, inherited constraint"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-006",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "DENIED evidence on disk, recovery rebuilds word"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "recovery rebuilds word and drops DENIED"
+      ],
+      "expected_result": "DENIED must be preserved",
+      "design_result": "rebuild preserves DENIED_MASK",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §4, STATE-TRANSITION-MATRIX.md §3"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B36-CRASH-007",
+      "category": "CRASH_RECOVERY",
+      "preconditions": [
+        "evidence conflict on one tx (contradictory records)"
+      ],
+      "actors": [
+        "recovery thread"
+      ],
+      "execution_steps": [
+        "recovery resolves conflict by assuming committed"
+      ],
+      "expected_result": "must not assume; isolate / DENY",
+      "design_result": "evidence conflict -> ISOLATED, no assumption",
+      "evidence_refs": [
+        "CRASH-RECOVERY-PROTOCOL.md §7"
+      ],
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
