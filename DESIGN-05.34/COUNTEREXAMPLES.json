@@ -1,0 +1,937 @@
+{
+ "total": 40,
+ "entries": [
+  {
+   "case_id": "B34-WAKE-001",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1"
+   ],
+   "actors": [
+    "\u4e1a\u52a1B",
+    "\u51bb\u7ed3\u8005F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "B \u6301\u9501\u9012\u51cf\u5230 0",
+    "B notify_all",
+    "F \u6301\u9501\u68c0\u67e5 predicate"
+   ],
+   "lock_state": [],
+   "expected_result": "\u65e0\u4e22\u5931\u5524\u9192",
+   "design_result": "F \u6301\u9501\u770b\u5230 count==0 \u76f4\u63a5\u8fd4\u56de\u4e0d wait",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-002",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count \u5df2 0"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 0
+   },
+   "execution_steps": [
+    "F \u8fdb\u5165 wait \u524d count \u5df2 0",
+    "F \u6301\u9501\u91cd\u67e5"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u8fdb\u5165 wait",
+   "design_result": "\u6301\u9501\u91cd\u67e5\u76f4\u63a5\u8fd4\u56de",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-003",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "F wait \u88ab\u865a\u5047\u5524\u9192",
+    "F \u91cd\u67e5 count!=0 \u7ee7\u7eed wait"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7ee7\u7eed\u7b49\u5f85",
+   "design_result": "while \u5faa\u73af\u91cd\u67e5",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-004",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1",
+    "timeout"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "F \u7b49\u5f85\u8d85\u65f6"
+   ],
+   "lock_state": [],
+   "expected_result": "\u56de\u6eda OPEN",
+   "design_result": "\u629b DrainTimeout \u56de\u6eda",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-005",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "F \u7b49\u5f85\u4e2d\u88ab\u53d6\u6d88"
+   ],
+   "lock_state": [],
+   "expected_result": "finally \u91ca\u653e\u9501\u56de\u6eda",
+   "design_result": "\u53d6\u6d88\u5f02\u5e38\u56de\u6eda",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-006",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "F \u7b49\u5f85\u88ab\u4e2d\u65ad"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b89\u5168\u7ec8\u6001",
+   "design_result": "\u4e2d\u65ad\u8fdb\u5165\u5b89\u5168\u7ec8\u6001",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-007",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_count=1"
+   ],
+   "actors": [
+    "B F"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "B \u9012\u51cf\u5230 0 notify_all",
+    "F \u88ab\u5524\u9192"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u5524\u9192\u6210\u529f",
+   "design_result": "notify_all \u5524\u9192\u51bb\u7ed3\u8005",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-008",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "count \u53d8\u5316"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": 0
+   },
+   "execution_steps": [
+    "F \u6301\u9501\u68c0\u67e5 count==0"
+   ],
+   "lock_state": [],
+   "expected_result": "\u68c0\u67e5\u539f\u5b50",
+   "design_result": "\u68c0\u67e5\u5728 _drain_lock \u5185",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-009",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "\u4e24\u51bb\u7ed3\u8005"
+   ],
+   "actors": [
+    "F1 F2"
+   ],
+   "initial_state": {
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "B \u5f52\u96f6 notify_all",
+    "F1 F2 \u5747\u5524\u9192"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5168\u90e8\u5524\u9192",
+   "design_result": "notify_all \u5524\u9192\u5168\u90e8",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-WAKE-010",
+   "category": "LOST_WAKEUP",
+   "preconditions": [
+    "admit_epoch"
+   ],
+   "actors": [
+    "B F"
+   ],
+   "initial_state": {
+    "admit_epoch": 0,
+    "admit_count": 0
+   },
+   "execution_steps": [
+    "B \u9012\u589e epoch",
+    "F \u9760 epoch \u5224\u65ad"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8bc6\u522b\u5148\u4e8e\u7b49\u5f85",
+   "design_result": "generation \u8ba1\u6570\u8f85\u52a9",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-001",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "FROZEN"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "FROZEN"
+   },
+   "execution_steps": [
+    "F _take_snapshot \u629b\u5f02\u5e38"
+   ],
+   "lock_state": [],
+   "expected_result": "\u56de\u6eda\u4e0d\u7ee7\u7eed fork",
+   "design_result": "_snapshot_failed_path \u56de\u6eda",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-002",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "SNAPSHOT_READY"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "SNAPSHOT_READY"
+   },
+   "execution_steps": [
+    "F _do_fork \u629b ForkFailed"
+   ],
+   "lock_state": [],
+   "expected_result": "\u56de\u6eda OPEN",
+   "design_result": "_fork_failed_path \u56de\u6eda",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-003",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u5206\u53c9\u540e\u7236"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "PARENT"
+   },
+   "execution_steps": [
+    "F \u7236\u521d\u59cb\u5316\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "RESTORE_FAILED",
+   "design_result": "\u7236\u6062\u590d\u5931\u8d25\u7ec8\u6001",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-004",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u5206\u53c9\u540e\u5b50"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "state": "CHILD"
+   },
+   "execution_steps": [
+    "C \u5b50\u521d\u59cb\u5316\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u5b89\u5168\u7ec8\u6001\u4e0d\u5f71\u54cd\u7236",
+   "design_result": "\u5b50\u9000\u51fa\uff0c\u7236\u4e0d\u53d7\u5f71\u54cd",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-005",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u5b50\u91cd\u5efa\u9501"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "state": "CHILD_REBUILD"
+   },
+   "execution_steps": [
+    "C \u9501\u91cd\u5efa\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u5b89\u5168\u7ec8\u6001",
+   "design_result": "\u56de\u6eda\u5df2\u5efa\u9501\uff0c\u5b50\u9000\u51fa",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-006",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u5b50\u91cd\u5efa\u8eab\u4efd"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "state": "CHILD_REBUILD"
+   },
+   "execution_steps": [
+    "C \u8eab\u4efd\u91cd\u5efa\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u5b89\u5168\u7ec8\u6001",
+   "design_result": "\u56de\u6eda\uff0c\u5b50\u9000\u51fa",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-007",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u51bb\u7ed3\u4e2d"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "FREEZING"
+   },
+   "execution_steps": [
+    "F Receipt \u68c0\u67e5\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u56de\u6eda\u6216\u9694\u79bb",
+   "design_result": "\u56de\u6eda OPEN \u6216\u9694\u79bb",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-008",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u6e05\u7406\u4e2d"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "CLEANING"
+   },
+   "execution_steps": [
+    "F \u6e05\u7406\u5931\u8d25\u53c8\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8bb0\u5f55\u9644\u52a0\u5f02\u5e38\u4e0d\u6539\u53d8\u7ec8\u6001",
+   "design_result": "\u9644\u52a0\u5f02\u5e38\u4e0d\u8986\u76d6",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-009",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u7236\u8def\u5f84"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "PARENT"
+   },
+   "execution_steps": [
+    "F \u8bef\u6267\u884c\u5b50\u521d\u59cb\u5316"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "\u7236\u4e0d\u6267\u884c\u5b50\u4e13\u5c5e\u521d\u59cb\u5316",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-EXC-010",
+   "category": "FORK_EXCEPTION",
+   "preconditions": [
+    "\u5df2 DENIED"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "DENIED"
+   },
+   "execution_steps": [
+    "F \u6e05\u7406\u5931\u8d25\u4ecd\u56de OPEN"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "DENIED \u4fdd\u6301\u4e0d\u53ef\u9006",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 6",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-001",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "count=32767"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_count": 32767
+   },
+   "execution_steps": [
+    "A \u518d\u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u62d2\u7edd AdmitLimit",
+   "design_result": "\u62d2\u7edd\u51c6\u5165",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-002",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "count=0"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_count": 0
+   },
+   "execution_steps": [
+    "A \u9000\u51fa\u51cf\u5230 -1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u68c0\u6d4b\u9694\u79bb",
+   "design_result": "\u4e0b\u6ea2\u68c0\u6d4b\u9694\u79bb",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-003",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "gate=OPEN"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN, frozen=1"
+   },
+   "execution_steps": [
+    "\u68c0\u6d4b\u975e\u6cd5\u7ec4\u5408"
+   ],
+   "lock_state": [],
+   "expected_result": "\u62d2\u7edd\u9694\u79bb",
+   "design_result": "frozen==1 \u9700 gate==1",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-004",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "field-aware \u7f3a\u5931"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1"
+   },
+   "execution_steps": [
+    "A \u7528 state+1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u88f8\u52a0",
+   "design_result": "field-aware CAS \u6b65\u8fdb 2",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-005",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "\u5e76\u53d1 CAS"
+   ],
+   "actors": [
+    "A B"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/5"
+   },
+   "execution_steps": [
+    "A CAS \u5931\u8d25",
+    "B CAS \u5931\u8d25",
+    "\u90fd\u91cd\u8bd5"
+   ],
+   "lock_state": [],
+   "expected_result": "\u65e0\u6b7b\u5faa\u73af",
+   "design_result": "\u5931\u8d25\u91cd\u8bfb\u518d CAS\uff0c\u53ef\u63a8\u8fdb",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-006",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "gate=FREEZING"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "A \u51c6\u5165 CAS \u6301\u7eed\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "\u6b63\u786e\u62d2\u7edd\u975e\u9965\u997f",
+   "design_result": "gate \u975e OPEN \u6b63\u786e\u62d2\u7edd",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-007",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "gate=FREEZING count=0"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F \u7f6e frozen"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u53d8\u91cf\u6210\u7acb",
+   "design_result": "frozen==1 \u27fa gate==1 \u4e14 count==0",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-008",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "commit_count=0"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "commit_count": 0
+   },
+   "execution_steps": [
+    "T \u9000\u51fa\u51cf\u5230 -1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u68c0\u6d4b\u9694\u79bb",
+   "design_result": "\u8d1f\u8ba1\u6570\u68c0\u6d4b\u9694\u79bb",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-009",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "\u5199\u5165\u4e2d\u5d29\u6e83"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt_write_count": 1
+   },
+   "execution_steps": [
+    "R \u5d29\u6e83\u65e0\u51cf"
+   ],
+   "lock_state": [],
+   "expected_result": "\u6574\u4f53\u6062\u590d",
+   "design_result": "\u8fdb\u7a0b\u5d29\u6e83\u8ba1\u6570\u968f\u8fdb\u7a0b\u6d88\u5931",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-CNT-010",
+   "category": "COUNTER_BOUNDARY",
+   "preconditions": [
+    "receipt_count 1\u21920"
+   ],
+   "actors": [
+    "R F"
+   ],
+   "initial_state": {
+    "receipt_write_count": 1
+   },
+   "execution_steps": [
+    "R \u51cf\u5230 0 notify"
+   ],
+   "lock_state": [],
+   "expected_result": "\u901a\u77e5\u51bb\u7ed3\u8005",
+   "design_result": "\u5f52\u96f6\u901a\u77e5 _drain_cond",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-001",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u672a\u51c6\u5165\u76f4\u63a5\u63d0\u4ea4"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "T \u672a CAS \u51c6\u5165\u76f4\u63a5 commit"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u63d0\u4ea4\u524d\u5fc5\u987b CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-002",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u672a\u51c6\u5165\u5199\u56de\u6267"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "R \u672a\u51c6\u5165\u5199\u56de\u6267"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u56de\u6267\u5199\u524d CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-003",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u540e\u53f0\u4efb\u52a1\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "B"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "B \u540e\u53f0\u4efb\u52a1\u672a\u51c6\u5165\u5199\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u540e\u53f0\u4efb\u52a1 CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-004",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u56de\u8c03\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "CB"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "CB \u56de\u8c03\u672a\u51c6\u5165\u5199\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u56de\u8c03 CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-005",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u5b9a\u65f6\u4efb\u52a1\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "T \u5b9a\u65f6\u672a\u51c6\u5165\u5199\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u5b9a\u65f6\u4efb\u52a1 CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-006",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u5f02\u6b65\u7ebf\u7a0b\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "W"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "W \u5f02\u6b65\u672a\u51c6\u5165\u5199\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u5f02\u6b65\u7ebf\u7a0b CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-007",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u6062\u590d\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "R \u6062\u590d\u5199\u5165\u672a\u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u6062\u590d CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-008",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u8865\u507f\u672a\u51c6\u5165"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "C \u8865\u507f\u5199\u5165\u672a\u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u7ed5\u8fc7",
+   "design_result": "\u8865\u507f CAS \u51c6\u5165",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-009",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "gate=FREEZING"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "T \u5c1d\u8bd5\u5199\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u62d2\u7edd",
+   "design_result": "CAS \u51c6\u5165\u5931\u8d25\u62d2\u7edd",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B34-BYP-010",
+   "category": "WRITE_ENTRY_COVERAGE",
+   "preconditions": [
+    "\u5176\u4ed6\u8fdb\u7a0b\u7ba1\u7406\u5458"
+   ],
+   "actors": [
+    "EXT"
+   ],
+   "initial_state": {
+    "\u5916\u90e8": "UNKNOWN"
+   },
+   "execution_steps": [
+    "EXT \u76f4\u63a5\u6539 current \u4e0d\u9075\u5b88\u534f\u8bae"
+   ],
+   "lock_state": [],
+   "expected_result": "\u65e0\u6cd5\u8bc1\u660e\u53d7\u63a7",
+   "design_result": "\u9501\u5916\u5199\u5165\u8005 UNKNOWN\uff0cFork DENY",
+   "evidence_refs": "WRITE-ENTRY-COVERAGE.md 5",
+   "verification_method": "static analysis",
+   "status": "NOT_PROVEN",
+   "requires_runtime_verification": true
+  }
+ ]
+}
