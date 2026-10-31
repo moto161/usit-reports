@@ -1,0 +1,33 @@
+# USIT-STAGE-B-DESIGN-05.23 ZIP 外部回执（ZIP-RECEIPT）
+
+> 本文件**不纳入 DELIVERY.zip**，用于记录 ZIP 自身哈希，避免自引用循环。
+
+## ZIP 自身
+
+| 文件 | 字节数 | SHA-256 |
+|------|--------|---------|
+| USIT-STAGE-B-DESIGN-05.23-DELIVERY.zip | 21181 | 0eb2e68ba688585a30d36e80f52541d8e0b0f1317db948263424ca61699dbd69 |
+
+## ZIP 内 7 文件最终哈希（真实解压后重算）
+
+| 文件 | 字节数 | SHA-256 | CRC-32 |
+|------|--------|---------|--------|
+| USIT-STAGE-B-DESIGN-05.23.md | 38231 | 33858674241b2d3d8c49277e7bf496ed0182765fc6d299058f672423d3c7b454 | 1919e71e |
+| USIT-STAGE-B-DESIGN-05.23-ISSUES.md | 1897 | 72e0ca33e96a46a096309079ef2a70e3845626c321ab2fb69721de5fbb7dca4e | c65fe205 |
+| USIT-STAGE-B-DESIGN-05.23-DIFF.md | 2700 | 41d2bf7f61e5d0139cadd6aabff313b73cb0710c66d303007a4b947a9cd16886 | 994c276f |
+| USIT-STAGE-B-DESIGN-05.23-CROSS-REVIEW.md | 1899 | 0da712d1c88437a2706952df1edf1a5f9ace5cdf52a7a7f6dd2cbedcff20ae1f | 1fb32178 |
+| USIT-STAGE-B-DESIGN-05.23-EXECUTION-REPORT.md | 4148 | 9d6145b47d758cc1ebe2b560a33e69fa3c7531bbc01724ab1709fc83248aca12 | 7917489b |
+| USIT-STAGE-B-DESIGN-05.23-HASH-MANIFEST.md | 1293 | 164a34e350a4a08c931c06029a8e89b74eecd3cf0797f139772d58f78b734a5d | 0b82c96f |
+| USIT-STAGE-B-DESIGN-05.23-HASH-RECEIPT.md | 2015 | 8122968f037751ba9d25734777de48a51871f7e7d690b34c00e016804a0047d5 | 6f9c80be |
+
+## 核验结论
+
+- ZIP 独立解压到全新目录 `_verify/`；
+- 7 个文件逐字节与源文件比对 **全部 MATCH**；
+- CRC-32 由 unzip 校验通过；
+- 文件数量、名称、字节数一致，无缺失/额外/重复。
+
+**ZIP 独立解压核验：PASS。**
+
+核验时间：2026-10-31（GMT+8）
+核验工具：Info-ZIP unzip、GNU sha256sum、GNU cmp
