@@ -1,0 +1,1366 @@
+{
+ "total": 60,
+ "entries": [
+  {
+   "case_id": "B33-ADMIT-001",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=OPEN",
+    "admit_count=0"
+   ],
+   "actors": [
+    "\u4e1a\u52a1A",
+    "\u51bb\u7ed3\u8005F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "F CAS freeze \u6210\u529f",
+    "A CAS \u51c6\u5165\u5931\u8d25"
+   ],
+   "lock_state": [],
+   "expected_result": "A \u88ab\u62d2\u7edd\uff0c\u65e0\u65b0\u51c6\u5165",
+   "design_result": "\u51bb\u7ed3 CAS \u540e A \u51c6\u5165 CAS \u5931\u8d25",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-002",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=OPEN"
+   ],
+   "actors": [
+    "\u4e1a\u52a1A",
+    "\u51bb\u7ed3\u8005F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "A CAS \u51c6\u5165\u6210\u529f count=1",
+    "F CAS freeze \u6210\u529f",
+    "F \u7b49 count \u5f52\u96f6"
+   ],
+   "lock_state": [],
+   "expected_result": "A \u5b8c\u6210\uff0cF \u7b49\u5f52\u96f6",
+   "design_result": "A \u5df2\u51c6\u5165\uff0c\u51bb\u7ed3\u7b49\u5176\u9000\u51fa",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-003",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=OPEN"
+   ],
+   "actors": [
+    "A B C"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "A B C \u540c\u65f6 CAS \u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570=3\uff0c\u5168\u90e8\u6210\u529f",
+   "design_result": "CAS \u4e32\u884c\u5316\uff0c\u8ba1\u6570\u6b63\u786e",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-004",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=FREEZING"
+   ],
+   "actors": [
+    "\u65b0\u8bf7\u6c42 N"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "N CAS \u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "N \u88ab\u62d2\u7edd",
+   "design_result": "gate=FREEZING\uff0cCAS \u5931\u8d25",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-005",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=FREEZING",
+    "\u8d85\u65f6"
+   ],
+   "actors": [
+    "\u65e7\u8bf7\u6c42 O"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F \u8d85\u65f6 CAS unfreeze\u2192OPEN",
+    "O \u76f4\u63a5\u51c6\u5165\u4e0d\u91cd\u68c0"
+   ],
+   "lock_state": [],
+   "expected_result": "O \u4e0d\u5f97\u7ed5\u8fc7\u91cd\u68c0",
+   "design_result": "O \u9700\u91cd\u65b0 CAS \u51c6\u5165\uff0c\u65e0\u7ed5\u8fc7",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-006",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u5206\u79bb\u64cd\u4f5c\u5047\u8bbe"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "\u5206\u79bb"
+   },
+   "execution_steps": [
+    "\u5148\u6539 Gate \u518d\u6539\u8ba1\u6570"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u5141\u8bb8\u6b64\u5206\u79bb\u6001",
+   "design_result": "\u5408\u5e76\u539f\u5b50\u5b57\uff0c\u65e0\u6b64\u6001",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-007",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u5206\u79bb\u64cd\u4f5c\u5047\u8bbe"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "\u5206\u79bb"
+   },
+   "execution_steps": [
+    "\u5148\u6539\u8ba1\u6570\u518d\u6539 Gate"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u5141\u8bb8\u6b64\u5206\u79bb\u6001",
+   "design_result": "\u5408\u5e76\u539f\u5b50\u5b57\uff0c\u65e0\u6b64\u6001",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-008",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u4e1a\u52a1\u6301 count=1",
+    "\u5f02\u5e38"
+   ],
+   "actors": [
+    "\u4e1a\u52a1 A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1"
+   },
+   "execution_steps": [
+    "A \u5f02\u5e38\u9000\u51fa\u672a\u51cf\u8ba1\u6570"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570\u5fc5\u987b\u4e00\u81f4",
+   "design_result": "finally CAS \u51cf\u8ba1\u6570",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-009",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u4e1a\u52a1\u5d29\u6e83"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1"
+   },
+   "execution_steps": [
+    "A \u5d29\u6e83\u65e0 finally"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570\u4e0d\u6cc4\u6f0f",
+   "design_result": "\u8fdb\u7a0b\u7ea7\u5d29\u6e83\u7531\u6574\u4f53\u6062\u590d\u5904\u7406",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-010",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u4e24\u8fdb\u7a0b\u540c\u65f6 fork"
+   ],
+   "actors": [
+    "P1 P2"
+   ],
+   "initial_state": {
+    "coord": "Free"
+   },
+   "execution_steps": [
+    "P1 \u83b7 coord",
+    "P2 \u83b7 coord \u963b\u585e"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5355\u51bb\u7ed3\u8005",
+   "design_result": "coord \u4e32\u884c\u5316\u51bb\u7ed3\u8005",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-011",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u7236\u6062\u590d\u4e2d"
+   ],
+   "actors": [
+    "\u65b0\u8bf7\u6c42 N",
+    "\u5b50 C"
+   ],
+   "initial_state": {
+    "\u5b50 admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "N \u53d1\u8bf7\u6c42\u5230\u7236",
+    "C \u72ec\u7acb\u72b6\u6001"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7236\u5b50\u9694\u79bb",
+   "design_result": "\u5b50\u72ec\u7acb admit_state\uff0c\u7236\u6062\u590d\u540e OPEN",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-012",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u51c6\u5165\u4e0e\u51bb\u7ed3\u7ade\u4e89"
+   ],
+   "actors": [
+    "A F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "A \u4e0e F \u7684 CAS \u5168\u5e8f\u5316"
+   ],
+   "lock_state": [],
+   "expected_result": "\u552f\u4e00\u7ebf\u6027\u5316\u70b9",
+   "design_result": "CAS \u7ebf\u6027\u5316\u4fdd\u8bc1\u5168\u5e8f",
+   "evidence_refs": "FORK-CONCURRENCY-TIMELINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-013",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=FREEZING"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/2"
+   },
+   "execution_steps": [
+    "\u5df2\u6709\u4e1a\u52a1\u9646\u7eed\u9000\u51fa",
+    "\u65e0\u65b0\u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "count \u5355\u8c03\u9012\u51cf\u5230 0",
+   "design_result": "I-CT-1 \u6210\u7acb",
+   "evidence_refs": "FORK-CONCURRENCY-TIMELINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-014",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "gate=FREEZING"
+   ],
+   "actors": [
+    "N"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "N \u5c1d\u8bd5\u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u5b58\u5728\u6b64\u6001",
+   "design_result": "I-CT-2 \u6210\u7acb",
+   "evidence_refs": "FORK-CONCURRENCY-TIMELINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-015",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u51bb\u7ed3\u6001"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0",
+    "commit": 0,
+    "receipt": 0
+   },
+   "execution_steps": [
+    "F \u7b49 count==0",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5feb\u7167\u4e00\u81f4\u6027",
+   "design_result": "I-CT-4 \u6210\u7acb",
+   "evidence_refs": "FORK-CONCURRENCY-TIMELINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-016",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u4e1a\u52a1\u53d6\u6d88"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1"
+   },
+   "execution_steps": [
+    "A \u88ab\u53d6\u6d88"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570\u51cf 1",
+   "design_result": "\u53d6\u6d88\u8def\u5f84\u51cf\u8ba1\u6570",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-017",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u4e1a\u52a1\u8d85\u65f6"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1"
+   },
+   "execution_steps": [
+    "A \u8d85\u65f6"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570\u51cf 1",
+   "design_result": "\u8d85\u65f6\u8def\u5f84\u51cf\u8ba1\u6570",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-018",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u5927\u91cf\u8bf7\u6c42"
+   ],
+   "actors": [
+    "N1..N100"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "100 \u8bf7\u6c42\u5e76\u53d1 CAS"
+   ],
+   "lock_state": [],
+   "expected_result": "\u8ba1\u6570\u6b63\u786e",
+   "design_result": "CAS \u539f\u5b50\u7d2f\u52a0",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-019",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u5df2 FREEZING"
+   ],
+   "actors": [
+    "F2"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F2 \u518d CAS freeze"
+   ],
+   "lock_state": [],
+   "expected_result": "\u62d2\u7edd",
+   "design_result": "CAS \u524d\u7f6e gate==OPEN \u5931\u8d25",
+   "evidence_refs": "GATE-ADMISSION-ATOMICITY.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-ADMIT-020",
+   "category": "GATE_ADMISSION",
+   "preconditions": [
+    "\u56de\u6eda unfreeze \u4e0e\u51c6\u5165\u540c\u65f6"
+   ],
+   "actors": [
+    "F N"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F CAS unfreeze\u2192OPEN",
+    "N CAS \u51c6\u5165"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4ec5\u4e00\u4e2a\u5148\u5230",
+   "design_result": "CAS \u5168\u5e8f\uff0c\u5148\u5230\u8005\u8d62",
+   "evidence_refs": "FORK-CONCURRENCY-TIMELINE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-001",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u65e7\u8bbe\u8ba1 coord \u5185 _close_admit"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "coord": "Held(F)",
+    "admit": "Free"
+   },
+   "execution_steps": [
+    "F \u6301 coord \u8c03 _close_admit \u83b7\u53d6 admit"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u5d4c\u5957",
+   "design_result": "05.33 \u6539\u7528\u539f\u5b50\u5b57\uff0c\u5e9f\u9664 _close_admit",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-002",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u65e7\u8bbe\u8ba1 coord \u5185 _assert_no_commit"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "coord": "Held(F)",
+    "commit": "Free"
+   },
+   "execution_steps": [
+    "F \u6301 coord \u8c03 _assert_no_commit \u83b7\u53d6 commit"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u5d4c\u5957",
+   "design_result": "05.33 \u6539\u7528\u539f\u5b50\u8ba1\u6570\uff0c\u5e9f\u9664",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-003",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u56de\u8c03\u95f4\u63a5\u83b7\u53d6 admit"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "coord": "Held(F)"
+   },
+   "execution_steps": [
+    "F \u5728 coord \u5185\u8c03\u56de\u8c03\u83b7\u53d6 admit"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u95f4\u63a5\u5d4c\u5957",
+   "design_result": "\u7981\u6b62\u56de\u8c03/\u5c01\u88c5\u9690\u85cf\u5d4c\u5957",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-004",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "with admit \u9690\u85cf\u5d4c\u5957"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "coord": "Held(F)"
+   },
+   "execution_steps": [
+    "F \u5728 coord \u5185 with admit"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "\u7981\u6b62\u4e0a\u4e0b\u6587\u7ba1\u7406\u5668\u9690\u85cf\u5d4c\u5957",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-005",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u7b49\u5f85\u65f6\u6301 coord"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "coord": "Held(F)"
+   },
+   "execution_steps": [
+    "F \u6301 coord \u7b49\u5f85 count==0"
+   ],
+   "lock_state": [],
+   "expected_result": "wait \u524d\u91ca\u653e\u9501",
+   "design_result": "\u6761\u4ef6 wait \u524d\u91ca\u653e\u6240\u6709\u9501",
+   "evidence_refs": "LOCK-WAIT-FOR-GRAPH.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-006",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u65e0\u8d85\u65f6"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/1"
+   },
+   "execution_steps": [
+    "F \u65e0\u9650\u7b49\u5f85 count \u5f52\u96f6"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5fc5\u987b\u8d85\u65f6",
+   "design_result": "\u8d85\u65f6\u56de\u6eda OPEN",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-007",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u5931\u8d25\u65e0\u6761\u4ef6\u91cd\u8bd5"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F \u51bb\u7ed3\u5931\u8d25\u65e0\u6761\u4ef6\u91cd\u8bd5"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7981\u6b62\u65e0\u6761\u4ef6\u91cd\u8bd5",
+   "design_result": "\u6709\u754c\u91cd\u8bd5\u6216\u62d2\u7edd",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-008",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u541e\u5f02\u5e38\u7ee7\u7eed"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "UNKNOWN"
+   },
+   "execution_steps": [
+    "F \u541e\u5f02\u5e38\u7ee7\u7eed"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5f02\u5e38\u8fdb\u5165\u5b89\u5168\u6001",
+   "design_result": "\u5f02\u5e38\u8fdb\u5165\u5b89\u5168\u7ec8\u6001",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-009",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "fork \u5931\u8d25"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F fork \u8fd4\u56de pid<0",
+    "F \u56de\u6eda"
+   ],
+   "lock_state": [],
+   "expected_result": "\u56de\u6eda OPEN",
+   "design_result": "CAS unfreeze\u2192OPEN",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-010",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u4e24\u51bb\u7ed3\u8005"
+   ],
+   "actors": [
+    "F1 F2"
+   ],
+   "initial_state": {
+    "coord": "Free"
+   },
+   "execution_steps": [
+    "F1 \u83b7 coord",
+    "F2 \u963b\u585e"
+   ],
+   "lock_state": [],
+   "expected_result": "\u552f\u4e00\u51bb\u7ed3\u8005",
+   "design_result": "coord \u4e32\u884c\u5316",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-011",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "commit \u8fdb\u884c\u4e2d"
+   ],
+   "actors": [
+    "F TC"
+   ],
+   "initial_state": {
+    "commit_count": "1"
+   },
+   "execution_steps": [
+    "TC \u63d0\u4ea4\u4e2d",
+    "F \u5c1d\u8bd5\u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u7b49 commit \u5f52\u96f6",
+   "design_result": "\u5feb\u7167\u524d assert commit idle",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-012",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "receipt \u5199\u5165\u4e2d"
+   ],
+   "actors": [
+    "F TR"
+   ],
+   "initial_state": {
+    "receipt_write_count": "1"
+   },
+   "execution_steps": [
+    "TR \u5199\u56de\u6267",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u7b49 receipt \u5f52\u96f6",
+   "design_result": "\u5feb\u7167\u524d assert receipt idle",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-013",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u51bb\u7ed3\u540e\u65b0\u63d0\u4ea4"
+   ],
+   "actors": [
+    "F TC"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0",
+    "commit_count": "0"
+   },
+   "execution_steps": [
+    "TC \u5c1d\u8bd5\u65b0\u63d0\u4ea4"
+   ],
+   "lock_state": [],
+   "expected_result": "\u51bb\u7ed3\u540e\u65e0\u65b0\u63d0\u4ea4",
+   "design_result": "\u51bb\u7ed3\u6001\u963b\u6b62\u65b0\u63d0\u4ea4",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-014",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u534a\u6210\u54c1\u56de\u6267"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "receipt": "HALF"
+   },
+   "execution_steps": [
+    "F \u53d1\u73b0\u534a\u6210\u54c1\u56de\u6267"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb\u540e\u653e\u884c",
+   "design_result": "\u534a\u6210\u54c1\u9694\u79bb\uff0c\u963b\u6b62 Fork \u76f4\u81f3\u9694\u79bb",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-015",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u672a\u77e5\u4e8b\u52a1"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "txn": "UNKNOWN"
+   },
+   "execution_steps": [
+    "F \u53d1\u73b0\u672a\u77e5\u4e8b\u52a1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb\u540e\u653e\u884c",
+   "design_result": "UNKNOWN \u9694\u79bb\u963b\u6b62 Fork",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-016",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u9694\u79bb\u56de\u6267"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "receipt": "QUARANTINED"
+   },
+   "execution_steps": [
+    "F \u53d1\u73b0 QUARANTINED"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u53c2\u4e0e\u5feb\u7167\u4e0d\u963b\u6b62",
+   "design_result": "\u9694\u79bb\u4e0d\u53c2\u4e0e\uff0c\u4e0d\u963b\u6b62 Fork",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-017",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u4e0d\u53ef\u8ba4\u8bc1\u56de\u6267"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "receipt": "UNAUTH"
+   },
+   "execution_steps": [
+    "F \u5feb\u7167\u542b\u672a\u8ba4\u8bc1\u56de\u6267"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u53c2\u4e0e\u6210\u529f\u5224\u5b9a",
+   "design_result": "\u672a\u8ba4\u8bc1\u4e0d\u53c2\u4e0e\u6210\u529f\u6062\u590d",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 10",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-018",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "fork \u5931\u8d25"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F fork \u5931\u8d25",
+    "F \u6062\u590d"
+   ],
+   "lock_state": [],
+   "expected_result": "\u7236\u72b6\u6001\u6062\u590d",
+   "design_result": "CAS unfreeze \u6062\u590d OPEN",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 6",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-019",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "fork \u540e\u5b50\u7ee7\u627f"
+   ],
+   "actors": [
+    "P C"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "fork",
+    "C \u7ee7\u627f admit_state \u526f\u672c"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u91cd\u5efa\u4e3a\u72ec\u7acb",
+   "design_result": "\u5b50\u4e22\u5f03\u526f\u672c\u91cd\u5efa OPEN",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-FREEZE-020",
+   "category": "FORK_FREEZE_LOCK",
+   "preconditions": [
+    "\u7236\u5b50\u540c txn"
+   ],
+   "actors": [
+    "P C"
+   ],
+   "initial_state": {
+    "txn_id": "T1"
+   },
+   "execution_steps": [
+    "P \u62e5\u6709 T1",
+    "C \u5c1d\u8bd5\u4e5f\u62e5\u6709 T1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u76f8\u4ea4",
+   "design_result": "branch_path \u4e0d\u540c txn \u7a7a\u95f4\u4e0d\u76f8\u4ea4",
+   "evidence_refs": "FORK-TRANSACTION-OWNERSHIP.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-001",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u63d0\u4ea4\u8fdb\u884c"
+   ],
+   "actors": [
+    "TC F"
+   ],
+   "initial_state": {
+    "commit_count": "1"
+   },
+   "execution_steps": [
+    "TC \u63d0\u4ea4",
+    "F \u51bb\u7ed3\u7b49 commit \u5f52\u96f6"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u7b49\u63d0\u4ea4\u5b8c\u6210",
+   "design_result": "\u5feb\u7167\u524d commit idle",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-002",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u56de\u6267\u5199\u5165"
+   ],
+   "actors": [
+    "TR F"
+   ],
+   "initial_state": {
+    "receipt_write_count": "1"
+   },
+   "execution_steps": [
+    "TR \u5199\u56de\u6267",
+    "F \u51bb\u7ed3\u7b49 receipt \u5f52\u96f6"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u7b49\u56de\u6267\u5b8c\u6210",
+   "design_result": "\u5feb\u7167\u524d receipt idle",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-003",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u4e1a\u52a1\u8fdb\u884c"
+   ],
+   "actors": [
+    "A F"
+   ],
+   "initial_state": {
+    "admit_count": "1"
+   },
+   "execution_steps": [
+    "A \u4e1a\u52a1\u4e2d",
+    "F \u51bb\u7ed3\u7b49 admit \u5f52\u96f6"
+   ],
+   "lock_state": [],
+   "expected_result": "F \u7b49\u4e1a\u52a1\u9000\u51fa",
+   "design_result": "\u51bb\u7ed3\u7b49 admit_count==0",
+   "evidence_refs": "FORK-FREEZE-PROTOCOL.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-004",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u63d0\u4ea4\u5b8c\u6210\u672a\u786e\u8ba4"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "txn": "COMMITTED_UNCONFIRMED"
+   },
+   "execution_steps": [
+    "T \u5df2\u63d0\u4ea4\u672a\u786e\u8ba4",
+    "F \u51bb\u7ed3"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb",
+   "design_result": "\u8ba4\u8bc1\u7f3a\u5931\u65f6\u9694\u79bb",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-005",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u56de\u6267\u534a\u6210\u54c1"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt": "HALF"
+   },
+   "execution_steps": [
+    "R \u534a\u6210\u54c1",
+    "F \u51bb\u7ed3"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb",
+   "design_result": "\u534a\u6210\u54c1\u9694\u79bb",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-006",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u672a\u77e5\u4e8b\u52a1"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "txn": "UNKNOWN"
+   },
+   "execution_steps": [
+    "T \u672a\u77e5",
+    "F \u51bb\u7ed3"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb\u963b\u6b62",
+   "design_result": "UNKNOWN \u9694\u79bb\u963b\u6b62 Fork",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-007",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u6062\u590d\u4e2d"
+   ],
+   "actors": [
+    "T"
+   ],
+   "initial_state": {
+    "txn": "RECOVERING"
+   },
+   "execution_steps": [
+    "T \u6062\u590d\u4e2d",
+    "F \u51bb\u7ed3"
+   ],
+   "lock_state": [],
+   "expected_result": "\u9694\u79bb\u963b\u6b62",
+   "design_result": "\u6062\u590d\u4e2d\u9694\u79bb\u963b\u6b62",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-008",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u9694\u79bb\u56de\u6267"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt": "QUARANTINED"
+   },
+   "execution_steps": [
+    "R \u9694\u79bb",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u53c2\u4e0e\u5feb\u7167",
+   "design_result": "I-SNAP-4",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-009",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u51bb\u7ed3\u6001"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F \u5feb\u7167\u671f\u95f4\u65e0\u5199\u8005"
+   ],
+   "lock_state": [],
+   "expected_result": "\u6570\u636e\u4e0d\u53d8",
+   "design_result": "I-SNAP-5",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-010",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u672a\u8ba4\u8bc1\u56de\u6267"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt": "UNAUTH"
+   },
+   "execution_steps": [
+    "R \u672a\u8ba4\u8bc1",
+    "F \u5feb\u7167/\u6062\u590d"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u53c2\u4e0e\u6210\u529f\u6062\u590d",
+   "design_result": "I-SNAP-6",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-011",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u7236\u5b50\u751f\u6210 txn"
+   ],
+   "actors": [
+    "P C"
+   ],
+   "initial_state": {
+    "branch_path": "\u4e0d\u540c"
+   },
+   "execution_steps": [
+    "P \u751f\u6210 txn",
+    "C \u751f\u6210 txn"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u76f8\u4ea4",
+   "design_result": "I-TO-2",
+   "evidence_refs": "FORK-TRANSACTION-OWNERSHIP.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-012",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u5b50\u7ee7\u627f\u7236 txn_seq"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "txn_seq": "\u7236\u503c"
+   },
+   "execution_steps": [
+    "C \u7ee7\u627f\u7236 txn_seq"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u91cd\u5efa\u4e3a 0",
+   "design_result": "I-TO-3",
+   "evidence_refs": "FORK-TRANSACTION-OWNERSHIP.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-013",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u5b50\u6062\u590d\u7236\u4e8b\u52a1"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "txn": "\u7236\u672a\u5b8c\u6210"
+   },
+   "execution_steps": [
+    "C \u6062\u590d\u7236\u672a\u5b8c\u6210\u4e8b\u52a1"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u6062\u590d",
+   "design_result": "I-TO-4",
+   "evidence_refs": "FORK-TRANSACTION-OWNERSHIP.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-014",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "fork \u65f6\u4ed6\u7ebf\u7a0b\u6301\u9501"
+   ],
+   "actors": [
+    "P C T"
+   ],
+   "initial_state": {
+    "commit": "Held(T)"
+   },
+   "execution_steps": [
+    "fork \u65f6 T \u6301 commit",
+    "C \u7ee7\u627f\u526f\u672c"
+   ],
+   "lock_state": [],
+   "expected_result": "\u5b50\u91cd\u5efa\u4e0d\u7ee7\u627f",
+   "design_result": "\u5b50\u4e22\u5f03\u526f\u672c\u91cd\u5efa",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 8",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-015",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u5feb\u7167\u524d commit"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "commit_count": "0"
+   },
+   "execution_steps": [
+    "F \u786e\u8ba4 commit==0",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e00\u81f4",
+   "design_result": "I-SNAP-2",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-016",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u5feb\u7167\u524d receipt"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "receipt_write_count": "0"
+   },
+   "execution_steps": [
+    "F \u786e\u8ba4 receipt==0",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e00\u81f4",
+   "design_result": "I-SNAP-3",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-017",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u5feb\u7167\u524d admit"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_count": "0"
+   },
+   "execution_steps": [
+    "F \u786e\u8ba4 admit==0",
+    "F \u5feb\u7167"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e00\u81f4",
+   "design_result": "I-SNAP-1",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-018",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u534a\u6210\u54c1"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt": "HALF"
+   },
+   "execution_steps": [
+    "R \u534a\u6210\u54c1\u88ab\u6062\u590d\u5224\u6210\u529f"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u5224\u6210\u529f",
+   "design_result": "\u534a\u6210\u54c1\u4e0d\u5224\u6210\u529f",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 10",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-019",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u9694\u79bb\u56de\u6267"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "receipt": "QUARANTINED"
+   },
+   "execution_steps": [
+    "R \u9694\u79bb\u88ab\u5f53\u6210\u529f"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u89c6\u4e3a\u6210\u529f",
+   "design_result": "QUARANTINED\u2260\u6210\u529f",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 10",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  },
+  {
+   "case_id": "B33-INTER-020",
+   "category": "BUSINESS_RECEIPT_SNAPSHOT",
+   "preconditions": [
+    "\u672a\u77e5\u56de\u6267"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "receipt": "UNKNOWN"
+   },
+   "execution_steps": [
+    "F \u5feb\u7167\u4fe1\u4efb\u672a\u77e5\u56de\u6267"
+   ],
+   "lock_state": [],
+   "expected_result": "\u4e0d\u5f97\u4fe1\u4efb",
+   "design_result": "\u4e0d\u4fe1\u4efb\u672a\u77e5\u56de\u6267",
+   "evidence_refs": "BUSINESS-RECEIPT-SNAPSHOT-CONSISTENCY.md 10",
+   "verification_method": "static analysis",
+   "status": "PASS"
+  }
+ ]
+}
