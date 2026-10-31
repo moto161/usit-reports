@@ -1,0 +1,673 @@
+{
+ "total": 30,
+ "entries": [
+  {
+   "case_id": "B35-DUAL-001",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "_admit_state \u4e0e _admit_count \u4e24\u5957"
+   ],
+   "actors": [
+    "A F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/1",
+    "admit_count": 0
+   },
+   "execution_steps": [
+    "F \u8bfb _admit_count==0 \u5224\u6392\u7a7a",
+    "\u5b9e\u9645 admit_state count==1"
+   ],
+   "expected_result": "\u4e0d\u5f97\u4e24\u5957\u72ec\u7acb\u5224\u65ad",
+   "design_result": "05.35 \u5220\u9664\u72ec\u7acb count\uff0c\u5355\u4e00\u6e90",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-DUAL-002",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "\u7f13\u5b58 count \u6ede\u540e"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0",
+    "\u7f13\u5b58count": 2
+   },
+   "execution_steps": [
+    "F \u8bfb\u7f13\u5b58 count=2 \u8bef\u5224\u975e\u7a7a"
+   ],
+   "expected_result": "\u4ee5\u539f\u5b50\u5b57\u4e3a\u51c6",
+   "design_result": "\u7981\u6b62\u7f13\u5b58\u53c2\u4e0e\u5b89\u5168\u5224\u65ad",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-DUAL-003",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "\u4e24\u6e90\u5224\u6392\u7a7a"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0",
+    "admit_count": 1
+   },
+   "execution_steps": [
+    "F \u7528 admit_count \u5224\u672a\u6392\u7a7a"
+   ],
+   "expected_result": "\u4ee5\u552f\u4e00\u6e90\u4e3a\u51c6",
+   "design_result": "\u5355\u4e00\u6e90\u5220\u9664\u526f\u672c",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-DUAL-004",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "condvar \u7528\u72ec\u7acb count"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "\u72ec\u7acbcount": 0,
+    "admit_state": "FREEZING/1"
+   },
+   "execution_steps": [
+    "F \u89c2\u5bdf\u72ec\u7acb count==0 \u8bef\u5224"
+   ],
+   "expected_result": "\u89c2\u5bdf\u552f\u4e00\u6e90",
+   "design_result": "condvar \u53ea\u89c2\u5bdf admit_state.count",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-DUAL-005",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "\u7f13\u5b58\u66f4\u65b0\u5931\u8d25"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "\u7f13\u5b58": "stale"
+   },
+   "execution_steps": [
+    "A \u7f13\u5b58\u66f4\u65b0\u5931\u8d25"
+   ],
+   "expected_result": "\u4e22\u5f03\u7f13\u5b58\u91cd\u8bfb",
+   "design_result": "\u66f4\u65b0\u5931\u8d25\u4e22\u5f03\u4ece\u539f\u5b50\u5b57\u91cd\u8bfb",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-DUAL-006",
+   "category": "DUAL_STATE_SOURCE",
+   "preconditions": [
+    "\u552f\u4e00\u6e90"
+   ],
+   "actors": [
+    "A F"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "A \u51c6\u5165 CAS",
+    "F \u51bb\u7ed3 CAS"
+   ],
+   "expected_result": "\u5168\u5e8f\u552f\u4e00\u6e90",
+   "design_result": "\u540c\u4e00\u539f\u5b50\u5b57\u5168\u5e8f\u5316",
+   "evidence_refs": "ADMISSION-STATE-SINGLE-SOURCE.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-001",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "\u63a9\u7801\u9519\u8bef 0x7FFC"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "COUNT_MASK": "0x7FFC"
+   },
+   "execution_steps": [
+    "\u7528 0x7FFC \u8bfb count \u6f0f bit15"
+   ],
+   "expected_result": "\u63a9\u7801 0x7FFE \u8986\u76d6 15 \u4f4d",
+   "design_result": "COUNT_MASK=0x7FFE",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-002",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "0x3FFE \u53ea 14 \u4f4d"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "COUNT_MASK": "0x3FFE"
+   },
+   "execution_steps": [
+    "count \u4e0a\u9650\u9519\u8bef"
+   ],
+   "expected_result": "15 \u4f4d\u4e0a\u9650 32767",
+   "design_result": "COUNT_MASK=0x7FFE",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-003",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "field-aware \u7f3a\u5931"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/32767"
+   },
+   "execution_steps": [
+    "A \u7528 state+1"
+   ],
+   "expected_result": "\u7981\u6b62\u88f8\u52a0",
+   "design_result": "field-aware \u6b65\u8fdb 2",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-004",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "count=32767"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/32767"
+   },
+   "execution_steps": [
+    "A \u518d\u51c6\u5165"
+   ],
+   "expected_result": "AdmitLimit \u62d2\u7edd",
+   "design_result": "count>=MAX \u62d2\u7edd",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-005",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "count=0"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "A \u9000\u51fa\u51cf\u5230\u8d1f"
+   ],
+   "expected_result": "AdmitUnderflow \u9694\u79bb",
+   "design_result": "\u4e0b\u6ea2\u68c0\u6d4b\u9694\u79bb",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-006",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "\u4fdd\u7559\u4f4d\u88ab\u5199"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/0"
+   },
+   "execution_steps": [
+    "\u5199\u4fdd\u7559\u4f4d"
+   ],
+   "expected_result": "\u4fdd\u7559\u4f4d\u4e0d\u53d8",
+   "design_result": "field-aware \u53ea\u6539\u76ee\u6807\u5b57\u6bb5",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-007",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "frozen=1 gate=0"
+   ],
+   "actors": [
+    "\u2014"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/frozen=1"
+   },
+   "execution_steps": [
+    "\u68c0\u6d4b\u975e\u6cd5\u7ec4\u5408"
+   ],
+   "expected_result": "\u62d2\u7edd\u9694\u79bb",
+   "design_result": "frozen==1 \u9700 gate==1",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-MASK-008",
+   "category": "MASK_FIELD",
+   "preconditions": [
+    "CAS \u610f\u5916\u6539 gate"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/5"
+   },
+   "execution_steps": [
+    "A CAS \u6539 count \u540c\u65f6\u6539 gate"
+   ],
+   "expected_result": "\u7981\u6b62\u8de8\u5b57\u6bb5",
+   "design_result": "field-aware CAS \u9694\u79bb\u5b57\u6bb5",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 3",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-001",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "count \u5f52\u96f6\u4e0e frozen \u7f6e\u4f4d\u7ade\u4e89"
+   ],
+   "actors": [
+    "A F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/1"
+   },
+   "execution_steps": [
+    "A \u9000\u51fa count\u21920",
+    "F \u7f6e frozen"
+   ],
+   "expected_result": "FROZEN \u9700 count==0",
+   "design_result": "cas_frozen \u524d\u7f6e count==0",
+   "evidence_refs": "STATE-TRANSITION-MATRIX.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-002",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "DENIED \u7f6e\u4f4d\u540c\u65f6 unfreeze"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "FREEZING/0"
+   },
+   "execution_steps": [
+    "F unfreeze",
+    "D \u7f6e DENIED"
+   ],
+   "expected_result": "DENIED \u4e0d\u53ef\u9006",
+   "design_result": "unfreeze \u524d\u7f6e DENIED==0",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-003",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "rollback \u5c1d\u8bd5\u6e05 DENIED"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "DENIED"
+   },
+   "execution_steps": [
+    "F rollback \u6e05 DENIED"
+   ],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "DENIED \u4f4d\u4e0d\u53ef\u6e05",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-004",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "\u6062\u590d\u5c1d\u8bd5\u6e05 DENIED"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "DENIED"
+   },
+   "execution_steps": [
+    "F \u6062\u590d\u6e05 DENIED"
+   ],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "\u6062\u590d\u524d\u7f6e DENIED==0",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-005",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "\u5b50\u521d\u59cb\u5316\u6e05 DENIED"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "admit_state": "DENIED"
+   },
+   "execution_steps": [
+    "C \u521d\u59cb\u5316\u6e05 DENIED"
+   ],
+   "expected_result": "\u7981\u6b62",
+   "design_result": "\u5b50\u521d\u59cb\u5316\u4e0d\u89e6\u78b0 DENIED",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-006",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "CAS \u6301\u7eed\u5931\u8d25"
+   ],
+   "actors": [
+    "A B"
+   ],
+   "initial_state": {
+    "admit_state": "OPEN/32766"
+   },
+   "execution_steps": [
+    "A B \u7ade\u4e89 CAS \u6301\u7eed\u5931\u8d25"
+   ],
+   "expected_result": "\u4e0d\u65e0\u9650\u91cd\u8bd5\u653e\u884c",
+   "design_result": "\u91cd\u8bd5\u4e0a\u9650\u8fdb\u5165\u5b89\u5168\u7ec8\u6001",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 8",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-007",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "DENIED \u7f6e\u4f4d\u540e\u51c6\u5165"
+   ],
+   "actors": [
+    "A"
+   ],
+   "initial_state": {
+    "admit_state": "DENIED"
+   },
+   "execution_steps": [
+    "A \u5c1d\u8bd5\u51c6\u5165"
+   ],
+   "expected_result": "\u62d2\u7edd",
+   "design_result": "\u51c6\u5165\u524d\u7f6e DENIED==0",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-RACE-008",
+   "category": "STATE_RACE_DENIED",
+   "preconditions": [
+    "DENIED \u7f6e\u4f4d\u540e\u51bb\u7ed3"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "admit_state": "DENIED"
+   },
+   "execution_steps": [
+    "F \u5c1d\u8bd5\u51bb\u7ed3"
+   ],
+   "expected_result": "\u62d2\u7edd",
+   "design_result": "\u51bb\u7ed3\u524d\u7f6e DENIED==0",
+   "evidence_refs": "ATOMIC-STATE-WORD.md 7",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-001",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "FROZEN"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "FROZEN"
+   },
+   "execution_steps": [
+    "F \u5feb\u7167\u629b\u5f02\u5e38"
+   ],
+   "expected_result": "\u56de\u6eda\u4e0d\u7ee7\u7eed",
+   "design_result": "_snapshot_failed_path",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-002",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "SNAPSHOT_READY"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "SNAPSHOT_READY"
+   },
+   "execution_steps": [
+    "F fork \u629b\u5f02\u5e38"
+   ],
+   "expected_result": "\u56de\u6eda",
+   "design_result": "_fork_failed_path",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-003",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u5206\u53c9"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "PARENT"
+   },
+   "execution_steps": [
+    "F \u7236\u521d\u59cb\u5316\u5931\u8d25"
+   ],
+   "expected_result": "RESTORE_FAILED",
+   "design_result": "\u7236\u6062\u590d\u5931\u8d25\u7ec8\u6001",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-004",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u5206\u53c9"
+   ],
+   "actors": [
+    "C"
+   ],
+   "initial_state": {
+    "state": "CHILD"
+   },
+   "execution_steps": [
+    "C \u5b50\u521d\u59cb\u5316\u5931\u8d25"
+   ],
+   "expected_result": "\u5b50\u9000\u51fa\u7236\u4e0d\u53d7\u5f71\u54cd",
+   "design_result": "\u5b50\u5b89\u5168\u7ec8\u6001",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 1",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-005",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u8fdb\u7a0b\u5d29\u6e83"
+   ],
+   "actors": [
+    "P"
+   ],
+   "initial_state": {
+    "state": "\u8fd0\u884c\u4e2d"
+   },
+   "execution_steps": [
+    "P \u5d29\u6e83 finally \u4e0d\u6267\u884c"
+   ],
+   "expected_result": "\u5d29\u6e83\u6062\u590d\u534f\u8bae",
+   "design_result": "\u7ebf\u7a0b finally \u4e0d\u8986\u76d6\u5d29\u6e83",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 6",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-006",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u6e05\u7406\u5df2\u6267\u884c"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "cleanup_done": true
+   },
+   "execution_steps": [
+    "F \u518d\u6b21\u6e05\u7406"
+   ],
+   "expected_result": "\u5e42\u7b49\u4e0d\u91cd\u590d\u91ca\u653e",
+   "design_result": "\u5e42\u7b49\u6e05\u7406\u76f4\u63a5\u8fd4\u56de",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 4",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-007",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u6e05\u7406\u5931\u8d25"
+   ],
+   "actors": [
+    "F"
+   ],
+   "initial_state": {
+    "state": "CLEANING"
+   },
+   "execution_steps": [
+    "F \u6e05\u7406\u5931\u8d25\u4ecd\u56de OPEN"
+   ],
+   "expected_result": "\u8fdb\u5165\u9694\u79bb",
+   "design_result": "\u6e05\u7406\u5931\u8d25\u9694\u79bb\u4e0d\u6062\u590d OPEN",
+   "evidence_refs": "FORK-EXCEPTION-STATE-MACHINE.md 5",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  },
+  {
+   "case_id": "B35-EXC-008",
+   "category": "EXCEPTION_CRASH",
+   "preconditions": [
+    "\u5d29\u6e83\u540e\u9057\u7559"
+   ],
+   "actors": [
+    "R"
+   ],
+   "initial_state": {
+    "\u9057\u7559": "\u534a\u6210\u54c1\u4e8b\u52a1"
+   },
+   "execution_steps": [
+    "R \u626b\u63cf\u53d1\u73b0\u534a\u6210\u54c1"
+   ],
+   "expected_result": "\u9694\u79bb",
+   "design_result": "\u534a\u6210\u54c1\u9694\u79bb\u4e0d\u81ea\u52a8\u91cd\u8bd5",
+   "evidence_refs": "CRASH-RECOVERY-PROTOCOL.md 2",
+   "verification_method": "static analysis",
+   "status": "PASS",
+   "requires_runtime_verification": false
+  }
+ ]
+}
