@@ -1,0 +1,6 @@
+verification_status: NOT_VERIFIED
+manifest_sha256: dffa947ddfa770a544dd1c7ffb36d435b5386283f3401c56637ca7e7d1b2cd59
+manifest_bytes: 1530
+manifest_file: USIT-STAGE-B-DESIGN-05.19-HASH-MANIFEST.md
+note_blob_sha: Git Blob SHA 不得冒充 SHA-256，本回执所有哈希均为 SHA-256
+note_zip: ZIP 的 SHA-256 与字节数记录在本回执外部（最终答复），避免循环自引用
