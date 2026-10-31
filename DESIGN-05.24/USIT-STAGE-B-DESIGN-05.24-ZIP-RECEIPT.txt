@@ -1,0 +1,37 @@
+# USIT-STAGE-B-DESIGN-05.24 ZIP 外部回执（ZIP-RECEIPT）
+
+> 本文件**不纳入 DELIVERY.zip**，记录 ZIP 自身哈希与完整解压核验结果，避免自引用循环。
+
+## 1. ZIP 自身
+
+| 文件 | 字节数 | SHA-256 |
+|------|--------|---------|
+| USIT-STAGE-B-DESIGN-05.24-DELIVERY.zip | 28797 | 2e60442df5fabc6a79922e01350e8470d6ab5ec9797ce1fac1805751d8959fb9 |
+
+## 2. ZIP 内 10 文件最终哈希与 CRC（真实解压后重算）
+
+| 文件 | 字节数 | SHA-256 | CRC-32 |
+|------|--------|---------|--------|
+| USIT-STAGE-B-DESIGN-05.24.md | 54133 | 2fca7811a487425bdfc030fc7138d130aeb77d10302492ca34098cebea1baf74 | 9d529c1b |
+| USIT-STAGE-B-DESIGN-05.24-ISSUES.md | 2122 | 9824fa59e681577a467a87c1b3090053e18559134c096353e6594583dd301e10 | 3ceba47b |
+| USIT-STAGE-B-DESIGN-05.24-DIFF.md | 2982 | 6907a1f6d6346a81bd7b6b2c4c5e4a482c0d57a42e3bd25638e703eec93814d7 | dc8e3afd |
+| USIT-STAGE-B-DESIGN-05.24-CROSS-REVIEW.md | 1996 | ed318949584b63b903c2cfce112dcbb62e790bc7e364ee0a99062011e1b1da5a | 395951fc |
+| USIT-STAGE-B-DESIGN-05.24-EXECUTION-REPORT.md | 3900 | be1392c5aa9d091c8b3059208cccb23c2f020815dc2fe342604f12c10d4da135 | daab46cf |
+| USIT-STAGE-B-DESIGN-05.24-HASH-MANIFEST.md | 1859 | fd6e3ec6b16791b48776a8bbcdf42dde2c907a77f7a9f6bc9555b275033af98d | b100cc86 |
+| USIT-STAGE-B-DESIGN-05.24-HASH-RECEIPT.md | 2134 | 839cc410236a29586832915cf6b404eba4a72549578b3885d12c566ae2aeeced | a86b1dc3 |
+| usit_source_baseline_05.24_pre.txt | 2465 | 0a498a1bafd53770656910d0f6d1ba7737481719b600c961cacf6f14f5592a77 | 6b90bae2 |
+| usit_source_baseline_05.24_post.txt | 2466 | 9b1eb26ec335b8a816d5683ca17c84837cde8dfaac144b1dd2e8010b0f1ae30b | 56c8616e |
+| usit_source_baseline_05.24_diff.txt | 684 | c0c4dd7014757c492693ab654610cd8c3ff21f0e4b9d3326e80006e751c8de6d | b1608b36 |
+
+## 3. 核验结论
+
+- ZIP 独立解压到全新目录 `_verify/`；
+- 10 个文件逐字节与源文件比对 **全部 MATCH**；
+- CRC-32 由 unzip 校验通过；
+- 文件数量、名称、字节数一致，无缺失/额外/重复；
+- 无路径穿越、大小写冲突、目录条目、敏感信息、临时文件、旧版本。
+
+**ZIP 独立解压核验：PASS。**
+
+核验时间：2026-10-31（GMT+8）
+核验工具：Info-ZIP unzip、GNU sha256sum、GNU cmp
