@@ -1,0 +1,1073 @@
+{
+  "design_version": "DESIGN-05.39",
+  "baseline": "DESIGN-05.38 (commit e782471)",
+  "total": 55,
+  "valid": 55,
+  "status_counts": {
+    "PASS": 55
+  },
+  "category_counts": {
+    "TOKEN_ATOMIC": 20,
+    "FENCING": 20,
+    "VERSION_EXHAUST": 15
+  },
+  "note": "55 counterexamples: B39-01 TOKEN_ATOMIC=20, B39-02 FENCING=20, B39-03 VERSION_EXHAUST=15. All include negative/concurrent paths.",
+  "cases": [
+    {
+      "case_id": "B39-TKN-001",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "COUNT=1,active含T"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A,B同时release(T)"
+      ],
+      "expected_result": "T只消费一次",
+      "design_result": "active位图CAS原子清除,B重读INVALID_TOKEN",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-002",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "COUNT=0"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A admit"
+      ],
+      "expected_result": "COUNT+1与token发放原子",
+      "design_result": "128位CAS单步完成COUNT+1+token_seq+1",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-003",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "admit CAS成功后进程崩溃"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A admit后崩溃"
+      ],
+      "expected_result": "无COUNT多计",
+      "design_result": "内嵌模型无中间态,COUNT与token同原子字",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-004",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "token T已消费"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A再release(T)"
+      ],
+      "expected_result": "INVALID_TOKEN",
+      "design_result": "active位图已清除,is_active=False",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-005",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "token_seq=0xFFFFFFFF"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A admit"
+      ],
+      "expected_result": "TOKEN_EXHAUSTED_DENY",
+      "design_result": "token耗尽禁止回绕",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-006",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "方案B:COUNT+1成功,token未入账"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A admit(方案B)步骤2/3间崩溃"
+      ],
+      "expected_result": "恢复按WAL判定,不确定则隔离",
+      "design_result": "WAL PREPARED未COMMITTED→隔离",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-007",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "方案B:token消费成功,COUNT-1失败"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A release(方案B)COUNT CAS失败"
+      ],
+      "expected_result": "不确定→隔离",
+      "design_result": "WAL判定,不自动放行",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-008",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "token ID碰撞"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "两个admit产生同token"
+      ],
+      "expected_result": "不可能,token_seq单调",
+      "design_result": "token_seq单调递增,无重复",
+      "evidence_refs": "TOKEN-OWNERSHIP-AND-LIFECYCLE.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-009",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "账本与状态字版本不一致"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复检测版本不一致"
+      ],
+      "expected_result": "ISOLATED",
+      "design_result": "版本不一致不自动修复",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-010",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "业务异常退出未release"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A异常退出token泄漏"
+      ],
+      "expected_result": "由清理/恢复判定,不确定则隔离",
+      "design_result": "LEAKED token按提交状态判定",
+      "evidence_refs": "TOKEN-OWNERSHIP-AND-LIFECYCLE.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-011",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "两线程同时admit"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A,B同时admit"
+      ],
+      "expected_result": "各得不同token",
+      "design_result": "token_seq CAS串行,seq+1,+2",
+      "evidence_refs": "TOKEN-CONCURRENCY-MATRIX.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-012",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "release与freeze并发"
+      ],
+      "actors": [
+        "A(release)",
+        "B(freeze)"
+      ],
+      "execution_steps": [
+        "A release使count变化,B freeze重试"
+      ],
+      "expected_result": "freeze不会在count!=0时成功",
+      "design_result": "谓词count==0纳入CAS",
+      "evidence_refs": "TOKEN-CONCURRENCY-MATRIX.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-013",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "旧token复活(跨重启)"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A用旧token跨重启release"
+      ],
+      "expected_result": "跨重启token持久化NOT_PROVEN→DENY",
+      "design_result": "无持久化证明则DENY",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-014",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "token跨进程转让"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A把token给B跨进程release"
+      ],
+      "expected_result": "跨进程token功能DENY",
+      "design_result": "跨进程128位CAS未证明NOT_PROVEN",
+      "evidence_refs": "TOKEN-OWNERSHIP-AND-LIFECYCLE.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-015",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "重复恢复同一token"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复重复重放token操作"
+      ],
+      "expected_result": "幂等,按幂等键去重",
+      "design_result": "幂等键=token,已处理不重放",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §2/§3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-016",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "token账本损坏"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复检测账本损坏"
+      ],
+      "expected_result": "ISOLATED,不自动修复",
+      "design_result": "账本损坏→隔离",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-017",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "仅用token in dict检查一次性"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查05.38的dict检查是否原子"
+      ],
+      "expected_result": "dict检查非原子,必须改CAS",
+      "design_result": "05.39改active位图CAS",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-018",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "release CAS成功后token删除失败"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A release CAS成功,del token失败"
+      ],
+      "expected_result": "内嵌模型无此问题(无独立删除)",
+      "design_result": "内嵌模型token在状态字内",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-019",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "COUNT更新成功但token状态未更新"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "审查内嵌模型是否存在此中间态"
+      ],
+      "expected_result": "不存在,单CAS原子",
+      "design_result": "COUNT与token同一128位CAS",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-TKN-020",
+      "category": "TOKEN_ATOMIC",
+      "preconditions": [
+        "并发admit+release交错"
+      ],
+      "actors": [
+        "A(admit)",
+        "B(release)"
+      ],
+      "execution_steps": [
+        "A admit token=T1, B release token=T0"
+      ],
+      "expected_result": "各自独立,COUNT正确",
+      "design_result": "token独立,CAS串行",
+      "evidence_refs": "TOKEN-CONCURRENCY-MATRIX.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-001",
+      "category": "FENCING",
+      "preconditions": [
+        "旧owner A带旧token"
+      ],
+      "actors": [
+        "A(复活)",
+        "B(新owner)"
+      ],
+      "execution_steps": [
+        "B接管换新token;A复活带旧token释放"
+      ],
+      "expected_result": "A被资源端拒绝",
+      "design_result": "release_with_fencing_token比较token,FENCED_OUT",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-002",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端无token机制(flock)"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B接管释放flock资源"
+      ],
+      "expected_result": "禁止接管释放,OS_LOCK_ONLY",
+      "design_result": "flock降级,依赖进程退出自动释放",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-003",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端token持久化失败"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B接管,资源端重启后token丢失"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "token持久化失败→FENCING_UNKNOWN",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §7/§8",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-004",
+      "category": "FENCING",
+      "preconditions": [
+        "旧token迟到请求"
+      ],
+      "actors": [
+        "A(迟到)"
+      ],
+      "execution_steps": [
+        "A网络延迟后带旧token请求"
+      ],
+      "expected_result": "资源端拒绝旧token",
+      "design_result": "token单调,迟到旧token被拒",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-005",
+      "category": "FENCING",
+      "preconditions": [
+        "释放与接管同时"
+      ],
+      "actors": [
+        "A(release)",
+        "B(takeover)"
+      ],
+      "execution_steps": [
+        "A释放与B接管同时"
+      ],
+      "expected_result": "资源端唯一线性化点,一方胜出",
+      "design_result": "资源端原子,无并发释放",
+      "evidence_refs": "RESOURCE-RELEASE-ATOMICITY.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-006",
+      "category": "FENCING",
+      "preconditions": [
+        "两步accept+release"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查05.38两步操作"
+      ],
+      "expected_result": "禁止,TOCTOU",
+      "design_result": "统一release_with_fencing_token单步",
+      "evidence_refs": "RESOURCE-RELEASE-ATOMICITY.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-007",
+      "category": "FENCING",
+      "preconditions": [
+        "token回滚"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查token是否可回滚"
+      ],
+      "expected_result": "禁止,token单调",
+      "design_result": "token单调无回滚",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-008",
+      "category": "FENCING",
+      "preconditions": [
+        "心跳超时但旧owner存活"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B仅凭心跳超时接管释放"
+      ],
+      "expected_result": "心跳超时只触发调查",
+      "design_result": "不单独作为停止证明",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §8",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-009",
+      "category": "FENCING",
+      "preconditions": [
+        "并发接管两执行者"
+      ],
+      "actors": [
+        "B",
+        "C"
+      ],
+      "execution_steps": [
+        "B,C同时接管同一资源"
+      ],
+      "expected_result": "只有一个cas_token成功",
+      "design_result": "资源端cas_token原子,另一失败",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-010",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端拒绝旧token失败"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "资源端拒绝旧token操作本身失败"
+      ],
+      "expected_result": "FENCING_UNKNOWN→ISOLATED",
+      "design_result": "拒绝失败→状态不明",
+      "evidence_refs": "RESOURCE-RELEASE-ATOMICITY.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-011",
+      "category": "FENCING",
+      "preconditions": [
+        "fd绑定被当Fencing"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查05.38 fd归类"
+      ],
+      "expected_result": "fd≠Token,降级OS_LOCK_ONLY",
+      "design_result": "fd身份非资源端Token",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-012",
+      "category": "FENCING",
+      "preconditions": [
+        "unlink临时文件接管"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B接管释放unlink文件"
+      ],
+      "expected_result": "禁止,FENCING_UNSUPPORTED→ISOLATED",
+      "design_result": "无token语义",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-013",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端token权威存储"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查token权威在进程内还是资源端"
+      ],
+      "expected_result": "权威在资源端",
+      "design_result": "进程内只是缓存",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-014",
+      "category": "FENCING",
+      "preconditions": [
+        "token比较+释放非原子"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查资源端是否单步"
+      ],
+      "expected_result": "必须单步,否则NOT_PROVEN",
+      "design_result": "release_with_fencing_token原子",
+      "evidence_refs": "RESOURCE-RELEASE-ATOMICITY.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-015",
+      "category": "FENCING",
+      "preconditions": [
+        "跨进程mmap状态字"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B接管释放跨进程mmap"
+      ],
+      "expected_result": "FENCING_UNKNOWN→DENY",
+      "design_result": "HW CAS未证明",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-016",
+      "category": "FENCING",
+      "preconditions": [
+        "旧owner在途释放"
+      ],
+      "actors": [
+        "A(在途)",
+        "B(接管)"
+      ],
+      "execution_steps": [
+        "A已开始释放;B接管"
+      ],
+      "expected_result": "A在途动作被资源端Token拒绝",
+      "design_result": "资源端Token使A在途FENCED_OUT",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-017",
+      "category": "FENCING",
+      "preconditions": [
+        "token持久化证明缺失"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查token跨重启"
+      ],
+      "expected_result": "NOT_PROVEN",
+      "design_result": "跨重启持久化未证明",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §8",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-018",
+      "category": "FENCING",
+      "preconditions": [
+        "软件层owner检查+资源端token双层"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A仅过软件层检查但token过期"
+      ],
+      "expected_result": "仍被资源端拒绝",
+      "design_result": "双层缺一不可",
+      "evidence_refs": "RESOURCE-RELEASE-ATOMICITY.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-019",
+      "category": "FENCING",
+      "preconditions": [
+        "接管后旧owner迟到release"
+      ],
+      "actors": [
+        "A(旧)",
+        "B(新)"
+      ],
+      "execution_steps": [
+        "B接管后A迟到release"
+      ],
+      "expected_result": "FENCED_OUT",
+      "design_result": "token已递增,旧token被拒",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §5/§7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-FEN-020",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端重启后token状态"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B在资源端重启后接管"
+      ],
+      "expected_result": "token持久化失败→DENY",
+      "design_result": "重启丢token→FENCING_UNKNOWN",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-001",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "version=0xFFFFFFFF"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A执行cas_state_version递增"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "提交路径内检查,禁止回绕",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-002",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "version=0xFFFFFFFF-1"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A递增version"
+      ],
+      "expected_result": "正常递增到0xFFFFFFFF",
+      "design_result": "最后一次合法递增",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-003",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "并发递增version=MAX"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A,B同时递增"
+      ],
+      "expected_result": "一个DENY,一个成功(或都DENY)",
+      "design_result": "CAS串行,耗尽检查每轮",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-004",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "快照回滚旧版本"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复回滚到旧version"
+      ],
+      "expected_result": "禁止,版本单调",
+      "design_result": "快照回滚不回退版本",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-005",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "Epoch丢失"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A在epoch丢失后递增"
+      ],
+      "expected_result": "DENY,无epoch续期",
+      "design_result": "无持久化epoch则耗尽DENY",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-006",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "05.38静默回绕"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查(old+1)&0xFFFFFFFF"
+      ],
+      "expected_result": "禁止,必须前置检查",
+      "design_result": "删除静默回绕,前置DENY",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §1",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-007",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "ABA:状态A→B→A,版本V→V+1→V+2"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A用旧(A,V)提交"
+      ],
+      "expected_result": "CAS失败(版本不匹配)",
+      "design_result": "比较(state,version)",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-008",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "版本回绕ABA残余"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "版本回绕到0后ABA"
+      ],
+      "expected_result": "禁止回绕消除残余风险",
+      "design_result": "耗尽DENY不回绕",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-009",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "epoch未进CAS比较"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "审查05.38三重判定"
+      ],
+      "expected_result": "epoch未进CAS则不得声称",
+      "design_result": "移除epoch或进入CAS",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-010",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "断电后版本丢失"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "跨重启恢复依赖版本"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "跨重启持久化未证明",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-011",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "token_seq与version耗尽一致"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "token_seq=MAX时admit"
+      ],
+      "expected_result": "TOKEN_EXHAUSTED_DENY",
+      "design_result": "与version同一耗尽协议",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-012",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "旧版本恢复"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复尝试恢复旧version"
+      ],
+      "expected_result": "禁止,版本不回退",
+      "design_result": "版本单调不回退",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-013",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "跨进程HW CAS未证明"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "跨进程版本原子性"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "HW CAS未证明",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §4/§5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-014",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "耗尽后重新初始化"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A重置version=0"
+      ],
+      "expected_result": "禁止,不得绕过耗尽",
+      "design_result": "静默清零/重初始化禁止",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B39-VER-015",
+      "category": "VERSION_EXHAUST",
+      "preconditions": [
+        "耗尽态恢复"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复在耗尽态操作"
+      ],
+      "expected_result": "保持DENY",
+      "design_result": "耗尽态不恢复OPEN",
+      "evidence_refs": "VERSION-EXHAUSTION-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
