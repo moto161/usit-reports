@@ -1,0 +1,1313 @@
+{
+  "version": "05.40",
+  "generated": "2026-10-31",
+  "cases": [
+    {
+      "case_id": "B40-TOK-001",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "槽位0空闲, generation=5, 无活动token",
+      "actors": [
+        "线程A",
+        "线程B"
+      ],
+      "execution_steps": [
+        "A slot_alloc→(slot0,g6)",
+        "B slot_alloc→(slot1,g7)"
+      ],
+      "expected_result": "两个token身份(slot0,g6),(slot1,g7)唯一",
+      "design_result": "generation单调递增, slot不同, 身份唯一",
+      "evidence_refs": "TOKEN-IDENTITY-AND-BITMAP-MODEL.md §2/§4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-002",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "槽位0被token(slot0,g6)占用",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A release(slot0,g6)清位",
+        "A再次slot_alloc复用槽位0→(slot0,g7)"
+      ],
+      "expected_result": "新token(slot0,g7)与旧token(slot0,g6)身份不同",
+      "design_result": "generation不同, 旧token的gen=6 != 当前gen=7",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-003",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "槽位0被新token(slot0,g7)占用, 旧token(slot0,g6)迟到",
+      "actors": [
+        "旧线程持有(slot0,g6)"
+      ],
+      "execution_steps": [
+        "旧线程 release(slot0,g6)"
+      ],
+      "expected_result": "旧token被拒绝INVALID_TOKEN",
+      "design_result": "cur_gen=7 != token.gen=6 → INVALID_TOKEN",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-004",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "槽位0被token占用, COUNT=1",
+      "actors": [
+        "线程A",
+        "线程B"
+      ],
+      "execution_steps": [
+        "A release(slot0,g) CAS成功",
+        "B release(slot0,g) 重读后bit=0"
+      ],
+      "expected_result": "同一token只能消费一次",
+      "design_result": "B重读后active bit=0 → INVALID_TOKEN",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-005",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "16槽位全占",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A slot_alloc()"
+      ],
+      "expected_result": "返回NO_SLOT",
+      "design_result": "find_free_bit返回None → NO_SLOT",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-006",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "generation=0xFFFF",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A slot_alloc()"
+      ],
+      "expected_result": "返回GENERATION_EXHAUSTED_DENY, 禁止回绕",
+      "design_result": "gen==0xFFFF → GENERATION_EXHAUSTED_DENY",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §2/§6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-007",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "两个线程同时读active, free=slot5",
+      "actors": [
+        "线程A",
+        "线程B"
+      ],
+      "execution_steps": [
+        "A/B同时slot_alloc都找到slot5",
+        "A CAS成功",
+        "B CAS失败重读, slot5已占"
+      ],
+      "expected_result": "B重新找新free bit, 不占同槽位",
+      "design_result": "B重读后active变化, 重新find_free_bit",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-008",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "admit在CAS前崩溃",
+      "actors": [
+        "进程P"
+      ],
+      "execution_steps": [
+        "P admit: load_word完成, CAS未提交, 崩溃"
+      ],
+      "expected_result": "无状态变化, 无泄漏token",
+      "design_result": "CAS未提交, 状态字不变, 无中间态",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §3/§7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-009",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "admit CAS成功后崩溃",
+      "actors": [
+        "进程P"
+      ],
+      "execution_steps": [
+        "P admit CAS成功(COUNT+1,槽位占用,gen+1), 崩溃"
+      ],
+      "expected_result": "token已原子入账, 无COUNT/账本分离",
+      "design_result": "token在状态字内, CAS原子完成",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-010",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "业务异常退出未release",
+      "actors": [
+        "线程T持有token"
+      ],
+      "execution_steps": [
+        "T异常退出未release, 槽位仍占用"
+      ],
+      "expected_result": "LEAKED, 恢复按事务终态判定",
+      "design_result": "未提交/不确定→ISOLATED, 已提交→回收",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-011",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "槽位复用后旧token携带同slot不同gen",
+      "actors": [
+        "旧线程持有(slot3,g4)"
+      ],
+      "execution_steps": [
+        "槽位3复用给新token(slot3,g9)",
+        "旧线程release(slot3,g4)"
+      ],
+      "expected_result": "旧token被拒",
+      "design_result": "gen=4 != 当前gen=9 → INVALID_TOKEN",
+      "evidence_refs": "TOKEN-IDENTITY-AND-BITMAP-MODEL.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-012",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "token_id=slot为0-15越界slot=99",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A release(slot99, g)"
+      ],
+      "expected_result": "返回INVALID_TOKEN",
+      "design_result": "slot校验0<=slot<16失败",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-013",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "COUNT与popcount(TOKEN_ACTIVE)不一致(账本损坏)",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "恢复者读状态字发现COUNT=3但active=2个bit"
+      ],
+      "expected_result": "INVALID_STATE, DENY不自动重建",
+      "design_result": "is_valid_state检测COUNT!=popcount → INVALID",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-014",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "跨重启generation未持久化, 重启归0",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "进程重启, generation回退到0, 旧token(slot,g5)恢复"
+      ],
+      "expected_result": "禁止恢复token账本, DENY",
+      "design_result": "generation回退→旧token复活风险→NOT_PROVEN→DENY",
+      "evidence_refs": "TOKEN-CRASH-RECOVERY.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-015",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "token_consume中途CAS失败后重读",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A consume: 读w, CAS失败, 重读w发现bit已被清"
+      ],
+      "expected_result": "返回INVALID_TOKEN, 不复用旧状态",
+      "design_result": "CAS失败重读重算, active bit=0",
+      "evidence_refs": "TOKEN-ATOMIC-TRANSACTION.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-016",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "token_revoke与release并发",
+      "actors": [
+        "线程A(revoke)",
+        "线程B(release)"
+      ],
+      "execution_steps": [
+        "A revoke(slot,g) CAS成功清位",
+        "B release(slot,g)重读bit=0"
+      ],
+      "expected_result": "一个成功, 另一个INVALID_TOKEN",
+      "design_result": "清位后B的bit校验失败",
+      "evidence_refs": "TOKEN-OWNERSHIP-AND-LIFECYCLE.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-017",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "旧token序列号(generation)被复用恢复",
+      "actors": [
+        "攻击者试图复用旧generation"
+      ],
+      "execution_steps": [
+        "generation耗尽后试图复用旧值"
+      ],
+      "expected_result": "禁止复用, GENERATION_EXHAUSTED_DENY",
+      "design_result": "generation禁止回绕/复用",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-018",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "token身份只依赖位图bit(05.39旧模型)",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "active_mask bit3置位, 两个不同token都指向bit3"
+      ],
+      "expected_result": "05.39模型无法区分, 缺陷",
+      "design_result": "05.40改用(slot,generation)二元组, 修复",
+      "evidence_refs": "TOKEN-IDENTITY-AND-BITMAP-MODEL.md §1",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-019",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "两线程并发slot_alloc找同一free bit",
+      "actors": [
+        "线程A",
+        "线程B"
+      ],
+      "execution_steps": [
+        "A/B同时读active相同free=slot2",
+        "A CAS成功",
+        "B CAS失败"
+      ],
+      "expected_result": "B重读, 不产生两个token同slot",
+      "design_result": "CAS失败重读, 重新找free",
+      "evidence_refs": "TOKEN-SLOT-ALLOCATION-AND-REUSE.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-TOK-020",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "token完整结构字段齐全性",
+      "actors": [
+        "审计"
+      ],
+      "execution_steps": [
+        "检查token结构是否含slot/gen/owner/resource/state_version"
+      ],
+      "expected_result": "结构完整, 缺一不可",
+      "design_result": "完整结构见TOKEN-OWNERSHIP-AND-LIFECYCLE.md §2",
+      "evidence_refs": "TOKEN-OWNERSHIP-AND-LIFECYCLE.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-001",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "05.39同时存在cas128和cas64",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "admit用cas128改整字, cas_state_version用cas64改低64位"
+      ],
+      "expected_result": "64/128位重叠修改是未定义行为",
+      "design_result": "05.40统一128位, cas64废除",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §1",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-002",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "平台不支持CMPXCHG16B",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "尝试128位CAS"
+      ],
+      "expected_result": "整体协议DENY, 不退化为64位",
+      "design_result": "128位不支持→整体DENY",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-003",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "状态字地址未16字节对齐",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "128位CAS未对齐"
+      ],
+      "expected_result": "未对齐→NOT_PROVEN→DENY",
+      "design_result": "16字节对齐是前提",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-004",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "保留位bit20-31非0",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_cas提交发现保留位非0"
+      ],
+      "expected_result": "INVALID_STATE, 默认不放行",
+      "design_result": "is_valid_state检测保留位",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-005",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "保留位bit96-127非0",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_cas提交发现高保留位非0"
+      ],
+      "expected_result": "INVALID_STATE",
+      "design_result": "is_valid_state检测",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-006",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "无条件commit(state)整字覆盖",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "recovery调用commit(state)"
+      ],
+      "expected_result": "禁止, 会覆盖并发更新",
+      "design_result": "05.40删除无条件commit",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-007",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "整字算术(old+1)&0xFFFFFFFF",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "version递增用整字算术"
+      ],
+      "expected_result": "禁止, 会绕过字段掩码",
+      "design_result": "05.40用field_set_version",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-008",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "CAS失败后复用旧状态计算目标值",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A读w, CAS失败, 复用旧w的DENIED检查结果继续"
+      ],
+      "expected_result": "禁止, 必须重读重验",
+      "design_result": "field_cas失败→重读重算",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-009",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "重试超过上限",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A admit连续CAS失败16次"
+      ],
+      "expected_result": "返回CAS_LIVELOCK_DENY, 终止",
+      "design_result": "重试上限16, 耗尽终止",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-010",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "外层while True无限重试",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "业务循环while True内无终止条件"
+      ],
+      "expected_result": "禁止, 必须有终止",
+      "design_result": "05.40重试上限+终止状态",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-011",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "COUNT bit0非0(非法)",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_cas发现COUNT bit0=1"
+      ],
+      "expected_result": "INVALID_STATE",
+      "design_result": "COUNT_MASK=0xFFFE, bit0恒0",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §3/§5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-012",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "DENIED=1且GATE=OPEN(非法组合)",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_cas发现DENIED与OPEN同现"
+      ],
+      "expected_result": "INVALID_STATE, DENIED优先",
+      "design_result": "is_valid_state检测",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-013",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "FROZEN=1且FREEZING=1(非法中间态)",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_cas发现FROZEN与FREEZING同现"
+      ],
+      "expected_result": "INVALID_STATE, DENY",
+      "design_result": "is_valid_state检测",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-014",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "跨进程共享内存128位CAS未证明",
+      "actors": [
+        "跨进程执行者"
+      ],
+      "execution_steps": [
+        "进程A/B共享状态字, 用128位CAS"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "跨进程HW CAS未证明",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-015",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "跨重启128位持久化未证明",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "重启后恢复128位状态字"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "持久化未证明",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-016",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "字段操作只改指定字段不动其他位",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "field_set_count(w,n)只改COUNT位段"
+      ],
+      "expected_result": "其他字段(GATE/DENIED/VERSION)不变",
+      "design_result": "field_set掩码隔离",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-017",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "COUNT字段更新不改变其他字段证明",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "COUNT+1的field_cas, 验证其他字段不变"
+      ],
+      "expected_result": "GATE/DENIED/FROZEN/VERSION/TOKEN字段不变",
+      "design_result": "field-aware CAS只改指定字段",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-018",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "内存序非acquire-release",
+      "actors": [
+        "状态字"
+      ],
+      "execution_steps": [
+        "load_word/store用relaxed序"
+      ],
+      "expected_result": "竞态→DENY",
+      "design_result": "至少acquire-release",
+      "evidence_refs": "ATOMIC-ACCESS-WIDTH-PROTOCOL.md §2/§5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-019",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "单一状态源, 引入独立安全计数器",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "除状态字外再维护一个独立计数"
+      ],
+      "expected_result": "禁止, 单一准入状态源",
+      "design_result": "B35-01约束继承",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-WID-020",
+      "category": "ATOMIC_WIDTH",
+      "preconditions": "128位状态字容纳全部字段证明",
+      "actors": [
+        "状态字布局"
+      ],
+      "execution_steps": [
+        "检查字段是否都塞进128位"
+      ],
+      "expected_result": "COUNT/GATE/DENIED/FROZEN/FREEZING/VERSION/TOKEN_ACTIVE/TOKEN_GENERATION都在128位内",
+      "design_result": "字段布局见§3",
+      "evidence_refs": "UNIFIED-ATOMIC-STATE-WORD.md §2/§3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-001",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, admit需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A admit, field_cas内检查version耗尽"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY, 不回绕",
+      "design_result": "field_cas内前置检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-002",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, release需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A release, 版本耗尽检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "field_cas统一检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-003",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, slot_alloc需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A slot_alloc, 版本耗尽检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "field_cas统一检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-004",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, freeze需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A freeze, 版本耗尽检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "field_cas统一检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-005",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, unfreeze需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A unfreeze, 版本耗尽检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "field_cas统一检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-006",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, set_denied需递增",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A set_denied, 版本耗尽检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY(但仍需置DENIED?见§注)",
+      "design_result": "DENIED单调置位优先, 但version递增需检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-007",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "version=0xFFFFFFFF, recovery需递增",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "恢复操作需version+1"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY, 禁止恢复绕过",
+      "design_result": "恢复也走field_cas",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-008",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "在field_cas外直接version+1(05.39遗留)",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "admit的encode(...,version+1,...)在CAS外递增"
+      ],
+      "expected_result": "05.39缺陷: 绕过耗尽检查",
+      "design_result": "05.40统一field_cas内检查",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §1",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-009",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "版本回绕静默清零",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "(version+1)&0xFFFFFFFF回绕为0"
+      ],
+      "expected_result": "禁止, 耗尽DENY",
+      "design_result": "field_cas前置检查version==0xFFFFFFFF",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-010",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "快照恢复旧版本绕过耗尽",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "耗尽后用快照恢复旧version"
+      ],
+      "expected_result": "禁止, 版本单调不回退",
+      "design_result": "禁止快照回滚",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §4/§6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-011",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "generation=0xFFFF独立耗尽",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "slot_alloc, generation耗尽"
+      ],
+      "expected_result": "GENERATION_EXHAUSTED_DENY, 独立于version",
+      "design_result": "generation与version独立",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-012",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "token序列号复用旧值恢复可用性",
+      "actors": [
+        "攻击者"
+      ],
+      "execution_steps": [
+        "generation耗尽后复用旧值"
+      ],
+      "expected_result": "禁止, 不回绕不复用",
+      "design_result": "generation禁止复用",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-013",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "持久化epoch在field_cas外检查",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "epoch检查在CAS外, 版本续期"
+      ],
+      "expected_result": "禁止, epoch必须进CAS比较值",
+      "design_result": "epoch未证明→DENY",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-014",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "跨重启版本单调性未证明",
+      "actors": [
+        "恢复者"
+      ],
+      "execution_steps": [
+        "重启后version可能回退"
+      ],
+      "expected_result": "NOT_PROVEN→DENY",
+      "design_result": "跨重启单调性未证明",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-VER-015",
+      "category": "VERSION_EXHAUST",
+      "preconditions": "全入口覆盖矩阵完整性",
+      "actors": [
+        "审计"
+      ],
+      "execution_steps": [
+        "检查admit/release/slot_alloc/consume/revoke/freeze/unfreeze/DENIED/recovery是否都走耗尽检查"
+      ],
+      "expected_result": "全部入口覆盖",
+      "design_result": "全入口矩阵见§3",
+      "evidence_refs": "VERSION-EXHAUSTION-ALL-ENTRYPOINTS.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-001",
+      "category": "FENCING",
+      "preconditions": "05.39的release_with_fencing_token两步TOCTOU",
+      "actors": [
+        "旧Owner"
+      ],
+      "execution_steps": [
+        "校验token通过→(窗口)→释放"
+      ],
+      "expected_result": "05.39缺陷: 校验与释放分离",
+      "design_result": "05.40用resource_atomic_release原子原语",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §1",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-002",
+      "category": "FENCING",
+      "preconditions": "旧Owner校验通过后接管并发递增token",
+      "actors": [
+        "旧Owner",
+        "接管者"
+      ],
+      "execution_steps": [
+        "旧Owner校验token==current",
+        "接管者cas_token递增",
+        "旧Owner执行释放"
+      ],
+      "expected_result": "旧Owner释放被拒FENCED_OUT",
+      "design_result": "resource_atomic_release内比较token, 接管后old_token!=current",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §4",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-003",
+      "category": "FENCING",
+      "preconditions": "接管成功后旧Owner复活释放",
+      "actors": [
+        "旧Owner"
+      ],
+      "execution_steps": [
+        "接管cas_token成功",
+        "旧Owner复活调resource_atomic_release(old_token)"
+      ],
+      "expected_result": "FENCED_OUT",
+      "design_result": "old_token!=current_token→拒绝",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-004",
+      "category": "FENCING",
+      "preconditions": "同一token重复释放",
+      "actors": [
+        "线程A"
+      ],
+      "execution_steps": [
+        "A release token成功",
+        "A再次release同token"
+      ],
+      "expected_result": "ALREADY_RELEASED幂等",
+      "design_result": "released标志+token校验",
+      "evidence_refs": "RESOURCE-FENCING-ATOMIC-RELEASE.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-005",
+      "category": "FENCING",
+      "preconditions": "释放完成响应丢失后重试",
+      "actors": [
+        "调用方"
+      ],
+      "execution_steps": [
+        "释放成功但响应丢失",
+        "调用方重试"
+      ],
+      "expected_result": "ALREADY_RELEASED, 不重复释放",
+      "design_result": "幂等键(resource_id,token)",
+      "evidence_refs": "RESOURCE-CRASH-AND-IDEMPOTENCY.md §1/§2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-006",
+      "category": "FENCING",
+      "preconditions": "释放中途崩溃(operation未完成)",
+      "actors": [
+        "资源端"
+      ],
+      "execution_steps": [
+        "resource_atomic_release执行operation中途崩溃"
+      ],
+      "expected_result": "released未置位, 状态不明→ISOLATED或幂等重试",
+      "design_result": "不确定→ISOLATED, 不自动重放",
+      "evidence_refs": "RESOURCE-CRASH-AND-IDEMPOTENCY.md §2/§3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-007",
+      "category": "FENCING",
+      "preconditions": "资源端重启token持久化失败",
+      "actors": [
+        "资源端"
+      ],
+      "execution_steps": [
+        "重启后token丢失"
+      ],
+      "expected_result": "FENCING_UNKNOWN→ISOLATED",
+      "design_result": "持久化失败→NOT_PROVEN→DENY",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §8",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-008",
+      "category": "FENCING",
+      "preconditions": "flock/fcntl被误判为Fencing",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "把flock归入FENCING_SUPPORTED"
+      ],
+      "expected_result": "05.39缺陷: flock不是资源端Fencing",
+      "design_result": "05.40降级为OS_LOCK_ONLY",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §1",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-009",
+      "category": "FENCING",
+      "preconditions": "fd绑定被误判为Fencing",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "把fd生命周期当token校验"
+      ],
+      "expected_result": "fd≠资源端token校验",
+      "design_result": "OS_LOCK_ONLY",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-010",
+      "category": "FENCING",
+      "preconditions": "unlink临时文件无任何Fencing",
+      "actors": [
+        "资源"
+      ],
+      "execution_steps": [
+        "尝试接管释放unlink资源"
+      ],
+      "expected_result": "ISOLATED, 禁止接管",
+      "design_result": "FENCING_UNSUPPORTED",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-011",
+      "category": "FENCING",
+      "preconditions": "跨进程mmap token字段无原子原语",
+      "actors": [
+        "资源"
+      ],
+      "execution_steps": [
+        "尝试接管释放mmap上的token"
+      ],
+      "expected_result": "FENCING_UNKNOWN, NOT_PROVEN→禁止接管",
+      "design_result": "无原子校验+释放原语",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-012",
+      "category": "FENCING",
+      "preconditions": "心跳超时单独作为旧Owner停止证明",
+      "actors": [
+        "接管者"
+      ],
+      "execution_steps": [
+        "仅凭心跳超时就接管释放"
+      ],
+      "expected_result": "禁止, 心跳只触发调查",
+      "design_result": "接管需资源端cas_token",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-013",
+      "category": "FENCING",
+      "preconditions": "接管CAS与释放并发线性化",
+      "actors": [
+        "旧Owner",
+        "接管者"
+      ],
+      "execution_steps": [
+        "旧Owner释放与接管者cas_token并发"
+      ],
+      "expected_result": "一方胜出, 唯一线性化点",
+      "design_result": "资源端临界区串行化",
+      "evidence_refs": "RESOURCE-FENCING-ATOMIC-RELEASE.md §3",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-014",
+      "category": "FENCING",
+      "preconditions": "资源端token单调递增, 无回滚",
+      "actors": [
+        "资源端"
+      ],
+      "execution_steps": [
+        "token回滚到旧值"
+      ],
+      "expected_result": "禁止, token单调",
+      "design_result": "token无回滚路径",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-015",
+      "category": "FENCING",
+      "preconditions": "软件层owner_id/version冒充Fencing",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "用进程内owner_id检查当Fencing"
+      ],
+      "expected_result": "软件层检查≠资源端Fencing",
+      "design_result": "只阻止未来发起, 不拒在途",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-016",
+      "category": "FENCING",
+      "preconditions": "accept_fencing_token后再release两步",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "先accept token再独立release"
+      ],
+      "expected_result": "TOCTOU, 禁止",
+      "design_result": "05.40用resource_atomic_release单原语",
+      "evidence_refs": "RESOURCE-FENCING-ATOMIC-RELEASE.md §6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-017",
+      "category": "FENCING",
+      "preconditions": "重复接管(两次cas_token)",
+      "actors": [
+        "接管者A",
+        "接管者B"
+      ],
+      "execution_steps": [
+        "A cas_token递增",
+        "B再cas_token递增"
+      ],
+      "expected_result": "A失效, B成为新Owner",
+      "design_result": "token单调递增, 后接管者胜",
+      "evidence_refs": "RESOURCE-CRASH-AND-IDEMPOTENCY.md §5",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-018",
+      "category": "FENCING",
+      "preconditions": "资源端无原子原语但有token字段",
+      "actors": [
+        "资源"
+      ],
+      "execution_steps": [
+        "资源有current_token字段但无atomic_release"
+      ],
+      "expected_result": "降级FENCING_UNKNOWN, 禁止接管",
+      "design_result": "有token字段不够, 需原子原语证明",
+      "evidence_refs": "RESOURCE-FENCING-PROTOCOL.md §6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-019",
+      "category": "FENCING",
+      "preconditions": "原子命名atomic=True但无实际边界",
+      "actors": [
+        "旧实现"
+      ],
+      "execution_steps": [
+        "伪代码atomic=True无临界区"
+      ],
+      "expected_result": "禁止, 需实际临界区/事务边界",
+      "design_result": "05.40给internal_lock临界区",
+      "evidence_refs": "RESOURCE-FENCING-ATOMIC-RELEASE.md §6",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B40-FEN-020",
+      "category": "FENCING",
+      "preconditions": "外部分布式锁fence token原子性",
+      "actors": [
+        "外部服务"
+      ],
+      "execution_steps": [
+        "用etcd/zk lease提供fence token"
+      ],
+      "expected_result": "服务证明原子性则FENCING_SUPPORTED, 否则NOT_PROVEN",
+      "design_result": "未证明→NOT_PROVEN",
+      "evidence_refs": "RESOURCE-FENCING-CAPABILITY-MATRIX.md §2",
+      "verification_method": "STATIC",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ],
+  "summary": {
+    "RAW_ENTRY_TOTAL": 75,
+    "categories": {
+      "TOKEN_IDENTITY": 20,
+      "ATOMIC_WIDTH": 20,
+      "VERSION_EXHAUST": 15,
+      "FENCING": 20
+    }
+  }
+}
