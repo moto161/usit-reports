@@ -1,0 +1,13 @@
+verification_subject: USIT-STAGE-B-DESIGN-05.17 delivery set (7 files)
+verification_method: local-self-check-only-not-independent (sha256sum)
+verification_time: 2026-10-31 GMT+8
+verification_status: NOT_VERIFIED
+
+manifest_sha256: a75df4a17f9ca93ed787cd9dd75e80db50d130d9631e87cf0208ee72cdc23ef8
+manifest_bytes: 1478
+
+note_layering: Layered manifest used to avoid self-reference (MANIFEST -> RECEIPT -> ZIP).
+note_self_reference: MANIFEST does not include its own hash; it is recorded here in the receipt.
+note_blob_sha: Git Blob SHA is NOT used as file SHA-256.
+note_zip: ZIP SHA-256 is computed separately after packaging (see final answer / execution report).
+note_scope: This is a local self-check by the same executor, NOT independent third-party verification.
