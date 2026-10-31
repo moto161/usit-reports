@@ -1,0 +1,555 @@
+{
+  "version": "DESIGN-05.43",
+  "raw_entry_total": 33,
+  "unique_id_total": 33,
+  "unique_defect_total": 33,
+  "status_counts": {
+    "PASS": 28,
+    "FAIL": 3,
+    "NOT_PROVEN": 2,
+    "NOT_TESTED_RUNTIME": 0
+  },
+  "category_counts": {
+    "WAL_RECOVERY_IDEMPOTENCY": 6,
+    "PRECOMMIT_VALIDATION": 4,
+    "POST_COMMIT_ERROR": 3,
+    "LOCK_OWNERSHIP": 4,
+    "RESOURCE_FAILURE": 4,
+    "OWNER_AUTHORIZATION": 4,
+    "TOKEN_IDENTITY": 3,
+    "VERSION_EXHAUSTION": 3,
+    "RESOURCE_FENCING": 2
+  },
+  "cases": [
+    {
+      "case_id": "B43-WAL-001",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "一笔 ADMIT 事务的 WAL 含 PREPARE+COMMIT+APPLY 三条记录，count_delta=+1, gen_delta=+1",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "扫描 WAL",
+        "按 txn_id 分组",
+        "检测到 COMMIT 记录",
+        "apply 一次"
+      ],
+      "expected_result": "COUNT 只 +1，generation 只 +1",
+      "design_result": "05.42 缺陷：COMMIT 与 APPLY 各 apply 一次，COUNT/generation 翻倍(FAIL)；05.43 只取 COMMIT 记录 apply 一次(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-WAL-002",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "同一 txn_id 出现两条 COMMIT 记录（重复追加）",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "分组得两条 COMMIT",
+        "first_commit 取第一条",
+        "applied 集合去重"
+      ],
+      "expected_result": "只 apply 一次",
+      "design_result": "05.42 无去重(FAIL)；05.43 first_commit + applied_txn_ids 去重(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-WAL-003",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "只有 PREPARE 无 COMMIT（未提交事务）",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "分组检测",
+        "无 COMMIT 记录",
+        "跳过"
+      ],
+      "expected_result": "不 apply，状态不变",
+      "design_result": "05.43 正确：未提交丢弃(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-WAL-004",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "COMMIT 存在但 APPLY 缺失（崩溃于 APPLY 前）",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "检测到 COMMIT",
+        "apply 一次",
+        "无 APPLY 记录也不影响"
+      ],
+      "expected_result": "状态重建正确，apply 一次",
+      "design_result": "05.42 会因缺 APPLY 而逻辑混乱；05.43 只依赖 COMMIT(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §3/§4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-WAL-005",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "WAL 记录 checksum 损坏",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "scan_wal 发现损坏",
+        "返回 ISOLATED"
+      ],
+      "expected_result": "ISOLATED，DENY，不猜测",
+      "design_result": "05.43 正确：损坏隔离(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-WAL-006",
+      "category": "WAL_RECOVERY_IDEMPOTENCY",
+      "preconditions": "仅 APPLY 无 COMMIT（异常记录顺序）",
+      "actors": "恢复进程",
+      "execution_steps": [
+        "分组检测",
+        "无 COMMIT",
+        "APPLY 不是变更触发点"
+      ],
+      "expected_result": "不 apply",
+      "design_result": "05.42 缺陷：status==APPLY 会触发 apply(FAIL)；05.43 仅 COMMIT 触发(PASS)",
+      "evidence_refs": "WAL-RECOVERY-IDEMPOTENCY.md §2/§3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VAL-001",
+      "category": "PRECOMMIT_VALIDATION",
+      "preconditions": "候选状态 COUNT != popcount(TOKEN_ACTIVE)",
+      "actors": "事务",
+      "execution_steps": [
+        "build_candidate",
+        "invariants_hold 检查 I-1"
+      ],
+      "expected_result": "ABORT，候选状态不发布",
+      "design_result": "05.42 矛盾：先 APPLY 再回滚(FAIL)；05.43 COMMIT 前验证，ABORT 丢弃(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §2/§3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VAL-002",
+      "category": "PRECOMMIT_VALIDATION",
+      "preconditions": "候选状态 VERSION 回退（违反 I-2）",
+      "actors": "事务",
+      "execution_steps": [
+        "invariants_hold 检查 I-2"
+      ],
+      "expected_result": "ABORT",
+      "design_result": "05.43 COMMIT 前验证(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VAL-003",
+      "category": "PRECOMMIT_VALIDATION",
+      "preconditions": "COMMIT fsync 成功后 APPLY 抛异常",
+      "actors": "事务",
+      "execution_steps": [
+        "COMMIT 成功",
+        "publish 抛异常"
+      ],
+      "expected_result": "返回 COMMITTED_PENDING_APPLY，不回滚",
+      "design_result": "05.42 缺陷：返回 ERROR 诱导重试(FAIL)；05.43 区分四态(PASS)",
+      "evidence_refs": "POST-COMMIT-ERROR-AND-RETRY.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VAL-004",
+      "category": "PRECOMMIT_VALIDATION",
+      "preconditions": "读者在 APPLY 中途读状态",
+      "actors": "读者+事务",
+      "execution_steps": [
+        "事务临界区内 publish",
+        "读者用读锁/快照"
+      ],
+      "expected_result": "读到一致状态（旧或新），无半成品",
+      "design_result": "05.42 未说明(FAIL)；05.43 临界区内原子发布(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-PC-001",
+      "category": "POST_COMMIT_ERROR",
+      "preconditions": "COMMIT fsync 结果不确定",
+      "actors": "事务",
+      "execution_steps": [
+        "wal_append_fsync(COMMIT) 返回失败"
+      ],
+      "expected_result": "返回 UNKNOWN，调用方查询 txn_id",
+      "design_result": "05.42 只返回 UNKNOWN 但无查询接口(FAIL)；05.43 提供 query_txn(PASS)",
+      "evidence_refs": "POST-COMMIT-ERROR-AND-RETRY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-PC-002",
+      "category": "POST_COMMIT_ERROR",
+      "preconditions": "同一 req_id 重复调用",
+      "actors": "事务",
+      "execution_steps": [
+        "lookup_req 查到已成功",
+        "返回原结果"
+      ],
+      "expected_result": "幂等返回，不生成第二笔事务",
+      "design_result": "05.42 无幂等键(FAIL)；05.43 req_id 到 txn_id 映射(PASS)",
+      "evidence_refs": "POST-COMMIT-ERROR-AND-RETRY.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-PC-003",
+      "category": "POST_COMMIT_ERROR",
+      "preconditions": "COMMIT 成功但响应丢失，调用方重试",
+      "actors": "事务",
+      "execution_steps": [
+        "重试同 req_id",
+        "lookup_req 命中"
+      ],
+      "expected_result": "返回原事务 OK，不重复",
+      "design_result": "05.43 幂等键覆盖(PASS)",
+      "evidence_refs": "POST-COMMIT-ERROR-AND-RETRY.md §5/§6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-LOCK-001",
+      "category": "LOCK_OWNERSHIP",
+      "preconditions": "admit 持锁后调 run_txn，run_txn 内部再获取非重入锁",
+      "actors": "两个函数",
+      "execution_steps": [
+        "admit 进入 txn_guard",
+        "调用 run_txn",
+        "run_txn 再 with txn_guard"
+      ],
+      "expected_result": "05.42 自锁死(FAIL)；05.43 上层不持锁，仅 run_txn 持锁(PASS)",
+      "design_result": "05.42 缺陷暴露",
+      "evidence_refs": "LOCK-OWNERSHIP-AND-CALL-GRAPH.md §1/§2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B43-LOCK-002",
+      "category": "LOCK_OWNERSHIP",
+      "preconditions": "run_txn 提前 return 的锁释放",
+      "actors": "事务",
+      "execution_steps": [
+        "进入 txn_guard",
+        "ABORT/UNKNOWN 提前 return"
+      ],
+      "expected_result": "锁在 finally 释放",
+      "design_result": "05.42 有提前 return 遗留锁风险(FAIL)；05.43 try/finally 语义(PASS)",
+      "evidence_refs": "LOCK-OWNERSHIP-AND-CALL-GRAPH.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-LOCK-003",
+      "category": "LOCK_OWNERSHIP",
+      "preconditions": "恢复流程与普通事务并发",
+      "actors": "恢复+事务",
+      "execution_steps": [
+        "恢复置 in_recovery",
+        "普通事务入口检查标志"
+      ],
+      "expected_result": "普通事务被拒绝，不并发改写",
+      "design_result": "05.42 恢复锁未分离(FAIL)；05.43 recovery_lock + in_recovery(PASS)",
+      "evidence_refs": "LOCK-OWNERSHIP-AND-CALL-GRAPH.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-LOCK-004",
+      "category": "LOCK_OWNERSHIP",
+      "preconditions": "线程持锁中崩溃，锁遗留",
+      "actors": "线程",
+      "execution_steps": [
+        "持锁崩溃"
+      ],
+      "expected_result": "进程内锁可能遗留，跨线程未证明",
+      "design_result": "NOT_PROVEN，维持 DENY",
+      "evidence_refs": "LOCK-OWNERSHIP-AND-CALL-GRAPH.md §7",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "NOT_PROVEN"
+    },
+    {
+      "case_id": "B43-RES-001",
+      "category": "RESOURCE_FAILURE",
+      "preconditions": "operation 部分成功后抛异常",
+      "actors": "资源",
+      "execution_steps": [
+        "operation 执行副作用",
+        "抛异常"
+      ],
+      "expected_result": "进入 ISOLATED，持久化隔离标记，不自动重放",
+      "design_result": "05.42 仅文字声称 ISOLATED(FAIL)；05.43 isolate_release 落伪代码(PASS)",
+      "evidence_refs": "RESOURCE-FAILURE-AND-RECOVERY.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-RES-002",
+      "category": "RESOURCE_FAILURE",
+      "preconditions": "operation 成功后 consumed_records 写入前崩溃",
+      "actors": "资源",
+      "execution_steps": [
+        "operation 成功",
+        "WAL COMMIT 前崩溃"
+      ],
+      "expected_result": "恢复查 WAL 无 COMMIT，判 operation 幂等；幂等则重放，否则 ISOLATED",
+      "design_result": "05.43 崩溃矩阵覆盖(PASS)",
+      "evidence_refs": "RESOURCE-FAILURE-AND-RECOVERY.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-RES-003",
+      "category": "RESOURCE_FAILURE",
+      "preconditions": "已成功释放的请求重试",
+      "actors": "资源",
+      "execution_steps": [
+        "req_id 已在 consumed_records",
+        "重试"
+      ],
+      "expected_result": "返回 ALREADY_RELEASED，不重复 operation",
+      "design_result": "05.42 缺陷：token 不匹配先返回 FENCED_OUT(FAIL)；05.43 幂等查询在 operation 前(PASS)",
+      "evidence_refs": "RESOURCE-FAILURE-AND-RECOVERY.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-RES-004",
+      "category": "RESOURCE_FAILURE",
+      "preconditions": "operation 非幂等，崩溃后无法安全重放",
+      "actors": "资源",
+      "execution_steps": [
+        "operation 非幂等",
+        "崩溃",
+        "恢复无法证明幂等"
+      ],
+      "expected_result": "ISOLATED，禁止自动重放",
+      "design_result": "05.43 明确隔离(PASS)",
+      "evidence_refs": "RESOURCE-FAILURE-AND-RECOVERY.md §2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-OWN-001",
+      "category": "OWNER_AUTHORIZATION",
+      "preconditions": "窃取正确 generation 但非 owner 的调用方释放",
+      "actors": "攻击者",
+      "execution_steps": [
+        "持有正确 token 数值",
+        "但 trusted_caller_owner 不匹配"
+      ],
+      "expected_result": "OWNER_MISMATCH，不执行 operation",
+      "design_result": "05.42 无 owner 校验(FAIL)；05.43 三重校验(PASS)",
+      "evidence_refs": "RESOURCE-OWNER-AUTHORIZATION.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-OWN-002",
+      "category": "OWNER_AUTHORIZATION",
+      "preconditions": "伪造 generation 数值",
+      "actors": "攻击者",
+      "execution_steps": [
+        "猜测 generation",
+        "与 TRT 不匹配"
+      ],
+      "expected_result": "STALE_TOKEN 拒绝",
+      "design_result": "05.43 正确(PASS)",
+      "evidence_refs": "RESOURCE-OWNER-AUTHORIZATION.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-OWN-003",
+      "category": "OWNER_AUTHORIZATION",
+      "preconditions": "旧 Owner 接管后带旧 token 释放",
+      "actors": "旧Owner",
+      "execution_steps": [
+        "接管推进 current_token/generation",
+        "旧 token 释放"
+      ],
+      "expected_result": "STALE_TOKEN 拒绝",
+      "design_result": "05.43 Fencing + generation 拒绝(PASS)",
+      "evidence_refs": "RESOURCE-OWNER-AUTHORIZATION.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-OWN-004",
+      "category": "OWNER_AUTHORIZATION",
+      "preconditions": "跨进程调用方提供可信身份",
+      "actors": "跨进程调用方",
+      "execution_steps": [
+        "跨进程传递 trusted_caller_owner"
+      ],
+      "expected_result": "身份传递无法证明不可伪造",
+      "design_result": "NOT_PROVEN，跨进程授权 DENY",
+      "evidence_refs": "RESOURCE-OWNER-AUTHORIZATION.md §6",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "NOT_PROVEN"
+    },
+    {
+      "case_id": "B43-ID-001",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "state_version 参与身份比较",
+      "actors": "校验逻辑",
+      "execution_steps": [
+        "身份元组含 state_version",
+        "比较时又说不参与"
+      ],
+      "expected_result": "05.42 矛盾(FAIL)；05.43 移除 state_version，身份=4 字段(PASS)",
+      "design_result": "05.42 缺陷暴露",
+      "evidence_refs": "TOKEN-IDENTITY-CANONICAL-MODEL.md §1/§2",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B43-ID-002",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "调用方自报 owner_id 当已认证身份",
+      "actors": "校验逻辑",
+      "execution_steps": [
+        "调用方传入 owner_id",
+        "当可信身份比较"
+      ],
+      "expected_result": "05.42 缺陷(FAIL)；05.43 用系统注入 trusted_caller_owner(PASS)",
+      "design_result": "05.42 缺陷暴露",
+      "evidence_refs": "TOKEN-IDENTITY-CANONICAL-MODEL.md §4",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "FAIL"
+    },
+    {
+      "case_id": "B43-ID-003",
+      "category": "TOKEN_IDENTITY",
+      "preconditions": "四字段逐一校验任一不匹配",
+      "actors": "校验逻辑",
+      "execution_steps": [
+        "slot/generation/owner/resource 逐一比较"
+      ],
+      "expected_result": "任一不匹配即拒绝",
+      "design_result": "05.43 正确(PASS)",
+      "evidence_refs": "TOKEN-IDENTITY-CANONICAL-MODEL.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VER-001",
+      "category": "VERSION_EXHAUSTION",
+      "preconditions": "VERSION == 0xFFFFFFFF 需递增",
+      "actors": "事务",
+      "execution_steps": [
+        "version_exhausted 检查"
+      ],
+      "expected_result": "VERSION_EXHAUSTED_DENY",
+      "design_result": "05.43 正确(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VER-002",
+      "category": "VERSION_EXHAUSTION",
+      "preconditions": "generation 达槽位最大值需递增",
+      "actors": "事务",
+      "execution_steps": [
+        "generation_exhausted 检查"
+      ],
+      "expected_result": "GENERATION_EXHAUSTED_DENY，不回绕",
+      "design_result": "05.43 正确(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-VER-003",
+      "category": "VERSION_EXHAUSTION",
+      "preconditions": "版本回退/跳跃/回绕",
+      "actors": "事务",
+      "execution_steps": [
+        "invariants I-2 检查"
+      ],
+      "expected_result": "ABORT 拒绝",
+      "design_result": "05.43 正确(PASS)",
+      "evidence_refs": "TRANSACTION-PRECOMMIT-VALIDATION.md §5",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-CONC-001",
+      "category": "RESOURCE_FENCING",
+      "preconditions": "两个 Owner 并发接管与释放",
+      "actors": "Owner A + Owner B",
+      "execution_steps": [
+        "A 接管",
+        "B 接管",
+        "A 释放",
+        "B 释放"
+      ],
+      "expected_result": "单一串行化点，旧 Owner 释放被 FENCED_OUT",
+      "design_result": "05.43 Fencing 串行化(PASS)",
+      "evidence_refs": "RESOURCE-OWNER-AUTHORIZATION.md §5 / RESOURCE-TAKEOVER-RELEASE-SERIALIZATION(05.42)",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B43-CONC-002",
+      "category": "RESOURCE_FENCING",
+      "preconditions": "重复释放（同一 token 两次）",
+      "actors": "Owner",
+      "execution_steps": [
+        "第一次释放成功",
+        "第二次携带原 token"
+      ],
+      "expected_result": "ALREADY_RELEASED（幂等），非 FENCED_OUT",
+      "design_result": "05.42 缺陷：先 FENCED_OUT(FAIL)；05.43 幂等查询优先(PASS)",
+      "evidence_refs": "RESOURCE-FAILURE-AND-RECOVERY.md §3",
+      "verification_method": "STATIC_ANALYSIS",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
