@@ -1,0 +1,598 @@
+{
+  "design_version": "DESIGN-05.38",
+  "baseline": "DESIGN-05.37 (commit dede10a)",
+  "total": 30,
+  "valid": 30,
+  "status_counts": {
+    "PASS": 30
+  },
+  "category_counts": {
+    "FENCING": 10,
+    "COND_CAS": 10,
+    "VERSION_ATOMIC": 10
+  },
+  "note": "30 counterexamples covering B38-01 (FENCING=10), B38-02 (COND_CAS=10), B38-03 (VERSION_ATOMIC=10). Includes negative paths (旧执行者复活/CAS重试/DENIED竞争/版本回绕/ABA/证据过期).",
+  "cases": [
+    {
+      "case_id": "B38-FENCE-001",
+      "category": "FENCING",
+      "preconditions": [
+        "owner=A, version=1, 资源R支持Fencing"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A通过软件层校验准备释放R; A被暂停; B接管(version=2); A复活继续释放"
+      ],
+      "expected_result": "A复活后无法并发释放R",
+      "design_result": "资源端Fencing Token拒绝A旧Token, 软件层校验version不符",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-002",
+      "category": "FENCING",
+      "preconditions": [
+        "资源R不支持Fencing(unlink临时文件)"
+      ],
+      "actors": [
+        "B(接管者)"
+      ],
+      "execution_steps": [
+        "B心跳超时后接管并释放R"
+      ],
+      "expected_result": "B不得释放R, 标记uncertain",
+      "design_result": "fencing_supported=False -> FENCING_UNSUPPORTED -> ISOLATED",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-003",
+      "category": "FENCING",
+      "preconditions": [
+        "旧执行者A在途释放, B接管"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A已通过校验正在release; B换Token接管并释放同一R"
+      ],
+      "expected_result": "不得并发释放",
+      "design_result": "资源端Token使A在途动作FENCED_OUT, B的释放唯一有效",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-004",
+      "category": "FENCING",
+      "preconditions": [
+        "心跳超时但A仍存活"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B仅凭心跳超时就接管释放"
+      ],
+      "expected_result": "心跳超时只能触发调查, 不能作为停止证明",
+      "design_result": "接管前只读调查, 不直接释放",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-005",
+      "category": "FENCING",
+      "preconditions": [
+        "释放结果不确定"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A释放R结果未知(崩溃)"
+      ],
+      "expected_result": "资源状态不明→ISOLATED",
+      "design_result": "uncertain=True -> ISOLATED",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-006",
+      "category": "FENCING",
+      "preconditions": [
+        "资源端拒绝旧Token"
+      ],
+      "actors": [
+        "A(旧owner)"
+      ],
+      "execution_steps": [
+        "A携带旧Token释放R"
+      ],
+      "expected_result": "释放被拒, 旧动作无效",
+      "design_result": "FENCED_OUT, 资源端拒绝",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §4/§7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-007",
+      "category": "FENCING",
+      "preconditions": [
+        "owner=A崩溃, 接管者B崩溃"
+      ],
+      "actors": [
+        "A",
+        "B",
+        "C"
+      ],
+      "execution_steps": [
+        "A崩溃->B接管->B崩溃->C接管"
+      ],
+      "expected_result": "C需重新调查资源状态, 不假设B已释放",
+      "design_result": "每次接管前状态核查, 不确定则ISOLATED",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-008",
+      "category": "FENCING",
+      "preconditions": [
+        "进程内锁保护owner/version"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A持进程内锁宣称跨进程释放安全"
+      ],
+      "expected_result": "进程内锁不能证明跨进程安全",
+      "design_result": "跨进程安全依赖资源端Fencing, 非进程内锁",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §9",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-009",
+      "category": "FENCING",
+      "preconditions": [
+        "任务级状态COMPLETED但资源未真释放"
+      ],
+      "actors": [
+        "审计"
+      ],
+      "execution_steps": [
+        "_cleanup_done=True但资源端未确认"
+      ],
+      "expected_result": "不得误标完成",
+      "design_result": "_cleanup_done仅资源端确认released后置位",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-FENCE-010",
+      "category": "FENCING",
+      "preconditions": [
+        "部分资源释放, 部分状态不明"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A释放部分资源, 另一资源状态不明"
+      ],
+      "expected_result": "状态不明资源隔离, 不假设清理成功",
+      "design_result": "uncertain -> ISOLATED, _cleanup_done=False",
+      "evidence_refs": "CLEANUP-FENCING-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-001",
+      "category": "COND_CAS",
+      "preconditions": [
+        "admit读cur(DENIED=0,GATE=OPEN)"
+      ],
+      "actors": [
+        "A(admit)",
+        "B(DENIED)"
+      ],
+      "execution_steps": [
+        "A读cur; B设DENIED=1; A提交admit"
+      ],
+      "expected_result": "admit不得绕过DENIED",
+      "design_result": "predicate含¬denied, 每轮重新评估, DENIED=1则PREDICATE_FALSE",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §2/§3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-002",
+      "category": "COND_CAS",
+      "preconditions": [
+        "cas_frozen读cur(DENIED=0,GATE=CLOSED,COUNT=0)"
+      ],
+      "actors": [
+        "A",
+        "B(DENIED)"
+      ],
+      "execution_steps": [
+        "A读cur; B设DENIED=1; A提交frozen"
+      ],
+      "expected_result": "frozen不得设置",
+      "design_result": "predicate含¬denied, CAS失败重读DENIED=1",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-003",
+      "category": "COND_CAS",
+      "preconditions": [
+        "cas_unfreeze读cur(DENIED=0,FROZEN=1)"
+      ],
+      "actors": [
+        "A",
+        "B(DENIED)"
+      ],
+      "execution_steps": [
+        "A读cur; B设DENIED=1; A提交unfreeze"
+      ],
+      "expected_result": "unfreeze不得清除/绕过DENIED",
+      "design_result": "predicate含¬denied, DENIED=1恒假",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-004",
+      "category": "COND_CAS",
+      "preconditions": [
+        "release无token, count>0"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A任意调用release减计数"
+      ],
+      "expected_result": "无token不得减计数",
+      "design_result": "predicate含token_valid, 无token则拒绝",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-005",
+      "category": "COND_CAS",
+      "preconditions": [
+        "token已消耗"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A重复用同一token release"
+      ],
+      "expected_result": "拒绝, 防重复释放下溢",
+      "design_result": "token一次性, del后token无效",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-006",
+      "category": "COND_CAS",
+      "preconditions": [
+        "CAS连续失败8次"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A外层while True继续重试"
+      ],
+      "expected_result": "必须LIVELOCK终止, 不无限重试",
+      "design_result": "conditional_cas内部MAX_CAS_RETRY=8",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-007",
+      "category": "COND_CAS",
+      "preconditions": [
+        "状态字含未知保留位"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A对非法状态执行操作"
+      ],
+      "expected_result": "拒绝INVALID_STATE",
+      "design_result": "is_valid_state检查保留位, 默认拒绝",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-008",
+      "category": "COND_CAS",
+      "preconditions": [
+        "COUNT字段=非法值>32767"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A执行admit"
+      ],
+      "expected_result": "拒绝INVALID_STATE",
+      "design_result": "is_valid_state检查count>MAX",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-009",
+      "category": "COND_CAS",
+      "preconditions": [
+        "field_cas内部修改expected绕过谓词"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "检查field_cas是否绕过调用者安全条件"
+      ],
+      "expected_result": "不得绕过, 谓词必须纳入CAS",
+      "design_result": "conditional_cas(predicate,transform)谓词在CAS内评估",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-CAS-010",
+      "category": "COND_CAS",
+      "preconditions": [
+        "release读count>0, 并发其他release"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A,B同时release不同token"
+      ],
+      "expected_result": "COUNT正确递减, 不下溢",
+      "design_result": "predicate count>0+token, CAS串行, 每次重读",
+      "evidence_refs": "ATOMIC-CONDITION-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-001",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "状态与版本分离存储"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "检查状态更新与版本更新是否可分离"
+      ],
+      "expected_result": "必须原子不可分离",
+      "design_result": "状态+版本合并64位原子字, 单条CAS",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §1/§2",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-002",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "状态值A->B->A(ABA)"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "恢复用旧状态值A+旧版本V提交"
+      ],
+      "expected_result": "ABA必须识别为不同状态",
+      "design_result": "cas_state_version比较(state,version), 版本变化则失败",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-003",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "恢复读陈旧old_state"
+      ],
+      "actors": [
+        "恢复线程",
+        "并发更新"
+      ],
+      "execution_steps": [
+        "恢复复用陈旧old_state+旧证据提交"
+      ],
+      "expected_result": "必须重读最新状态+重验证据",
+      "design_result": "每轮load_state_version+reload证据, 不复用",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-004",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "恢复期间并发DENIED置位"
+      ],
+      "actors": [
+        "恢复线程",
+        "B"
+      ],
+      "execution_steps": [
+        "B设DENIED=1; 恢复提交new_state"
+      ],
+      "expected_result": "恢复不得覆盖DENIED",
+      "design_result": "DENIED取并集, 单调语义, cas失败重读",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-005",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "recover递归无限调用"
+      ],
+      "actors": [
+        "审查"
+      ],
+      "execution_steps": [
+        "检查recover是否递归无上限"
+      ],
+      "expected_result": "禁止递归, 用while+MAX_RETRY",
+      "design_result": "MAX_RECOVERY_RETRY=8+退避, 无递归",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-006",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "跨进程共享状态字, 未证明HW CAS"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "声称跨进程恢复原子性"
+      ],
+      "expected_result": "NOT_PROVEN, DENY",
+      "design_result": "跨进程原子性需HW CAS+共享内存证明, 未证明则DENY",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §5/§6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-007",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "版本号回绕(32位溢出)"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "版本回绕后ABA防护"
+      ],
+      "expected_result": "无持久化epoch则NOT_PROVEN",
+      "design_result": "版本回绕ABA防护依赖epoch锚点",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §4/§6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-008",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "证据过期(采集后状态变化)"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复用过期证据提交"
+      ],
+      "expected_result": "必须重新采集校验, 过期则DENY",
+      "design_result": "reload_and_validate_evidence校验新鲜度",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §3/§5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-009",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "系统断电后版本丢失"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "跨重启恢复依赖内存版本"
+      ],
+      "expected_result": "跨重启NOT_PROVEN, DENY",
+      "design_result": "跨重启需持久化版本, 未证明则DENY",
+      "evidence_refs": "RECOVERY-VERSION-ATOMICITY.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B38-RECOV-010",
+      "category": "VERSION_ATOMIC",
+      "preconditions": [
+        "并发恢复者同时恢复"
+      ],
+      "actors": [
+        "恢复A",
+        "恢复B"
+      ],
+      "execution_steps": [
+        "A,B同时cas_state_version"
+      ],
+      "expected_result": "只有一个成功, 另一个重读确认",
+      "design_result": "版本CAS串行化, 唯一成功者",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
