@@ -1,0 +1,595 @@
+{
+  "design_version": "DESIGN-05.37",
+  "baseline": "DESIGN-05.36 (commit 511f59d)",
+  "total": 30,
+  "valid": 30,
+  "status_counts": {
+    "PASS": 30
+  },
+  "category_counts": {
+    "FREEZE_UNIFY": 8,
+    "CLEANUP_OWNERSHIP": 8,
+    "RECOVERY_CAS": 7,
+    "FIELD_OPS": 7
+  },
+  "note": "30 counterexamples covering B37-01 (FREEZE_UNIFY=8), B37-02 (CLEANUP_OWNERSHIP=8), B37-03 (RECOVERY_CAS=7), B37-04 (FIELD_OPS=7).",
+  "cases": [
+    {
+      "case_id": "B37-FREEZE-001",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=1,frozen=0,DENIED=0"
+      ],
+      "actors": [
+        "A(阶段1)"
+      ],
+      "execution_steps": [
+        "A: cas gate 1->0 成功后, 检查 frozen 是否被同时设置"
+      ],
+      "expected_result": "阶段1只关Gate, 不设frozen",
+      "design_result": "三阶段: 阶段1只关gate, frozen由阶段3 cas_frozen设置",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-002",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=0,count=3,frozen=0"
+      ],
+      "actors": [
+        "A(阶段2)"
+      ],
+      "execution_steps": [
+        "A等待count归零, 检查frozen"
+      ],
+      "expected_result": "frozen不得在count!=0时设置",
+      "design_result": "阶段2等待count==0, cas_frozen要求count==0",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §3/§4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-003",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=0,count=0,DENIED=0,frozen=0"
+      ],
+      "actors": [
+        "A(阶段3)"
+      ],
+      "execution_steps": [
+        "A: cas_frozen 设 frozen=1"
+      ],
+      "expected_result": "frozen=1成功",
+      "design_result": "cas_frozen检查gate/count/DENIED三项, 设frozen位",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-004",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=0,frozen=0,DENIED=1"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A: cas_frozen 尝试设置 frozen"
+      ],
+      "expected_result": "frozen不得设置(DENIED=1)",
+      "design_result": "cas_frozen前置DENIED==0, 返回'DENIED'",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-005",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=1,frozen=1"
+      ],
+      "actors": [
+        "检测线程"
+      ],
+      "execution_steps": [
+        "检测到 OPEN 与 FROZEN 同存"
+      ],
+      "expected_result": "非法组合, 进入ISOLATED",
+      "design_result": "gate=1且frozen=1 -> ISOLATED",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §2/§8",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-006",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=1,frozen=0"
+      ],
+      "actors": [
+        "A(冻结)",
+        "B(冻结)"
+      ],
+      "execution_steps": [
+        "两个冻结请求同时执行阶段1 cas gate 1->0"
+      ],
+      "expected_result": "只有一个成功, 无双重冻结",
+      "design_result": "gate 1->0 只能成功一次, 另一失败重读",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §6-C6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-007",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "gate=0,count=0,frozen=1"
+      ],
+      "actors": [
+        "A(超时)",
+        "B(DENIED)"
+      ],
+      "execution_steps": [
+        "A阶段2超时准备unfreeze; B设DENIED=1"
+      ],
+      "expected_result": "unfreeze被拒, DENIED优先",
+      "design_result": "unfreeze前置DENIED==0失败",
+      "evidence_refs": "FREEZE-STATE-MACHINE.md §6-C7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FREEZE-008",
+      "category": "FREEZE_UNIFY",
+      "preconditions": [
+        "frozen=1,DENIED=0,version=V"
+      ],
+      "actors": [
+        "A(unfreeze)",
+        "B(并发更新)"
+      ],
+      "execution_steps": [
+        "A读version=V; B修改状态version->V+1; A cas用旧version"
+      ],
+      "expected_result": "A的CAS失败, 不覆盖B的更新",
+      "design_result": "cas_with_version校验版本, 失败重读",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-001",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "资源R未释放, 无owner"
+      ],
+      "actors": [
+        "A",
+        "B"
+      ],
+      "execution_steps": [
+        "A,B同时claim_ownership释放R"
+      ],
+      "expected_result": "只有一个取得所有权, R只释放一次",
+      "design_result": "claim_ownership原子串行, 单owner",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-002",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "R释放中, owner=A"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B尝试释放R(未取得所有权)"
+      ],
+      "expected_result": "B不得释放R",
+      "design_result": "release_resource校验owner==执行者",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-003",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "R持续失败, retry_count=3=MAX"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A再次释放R"
+      ],
+      "expected_result": "永久失败, 进入ISOLATED, 不再循环",
+      "design_result": "retry_count>=MAX -> permanent_failed -> ISOLATED",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-004",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "R状态不明"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A释放R抛UnknownStateError"
+      ],
+      "expected_result": "进入ISOLATED, 不重试",
+      "design_result": "uncertain=True -> ISOLATED",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §4",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-005",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "owner=A崩溃, heartbeat超时"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B尝试接管"
+      ],
+      "expected_result": "B需先核查资源状态, 不可假设未释放",
+      "design_result": "接管前状态核查, uncertain则隔离",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-006",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "owner=A存活, heartbeat未超时"
+      ],
+      "actors": [
+        "B"
+      ],
+      "execution_steps": [
+        "B尝试接管"
+      ],
+      "expected_result": "B不得接管(owner仍存活)",
+      "design_result": "heartbeat未超时 -> 'OWNER_ALIVE'",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-007",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "owner=A被接管, version递增"
+      ],
+      "actors": [
+        "A(复活)"
+      ],
+      "execution_steps": [
+        "A复活后继续释放R"
+      ],
+      "expected_result": "A因version不匹配失效",
+      "design_result": "接管时version+=1, 旧owner失效",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-CLEAN-008",
+      "category": "CLEANUP_OWNERSHIP",
+      "preconditions": [
+        "清理进行中, DENIED=1"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A清理完成检查DENIED"
+      ],
+      "expected_result": "清理不得清除DENIED",
+      "design_result": "清理与DENIED正交, 不触碰DENIED位",
+      "evidence_refs": "IDEMPOTENT-CLEANUP-PROTOCOL.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-001",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "恢复读state=S,version=V"
+      ],
+      "actors": [
+        "恢复线程",
+        "并发写入者"
+      ],
+      "execution_steps": [
+        "写入者改state, version->V+1; 恢复用旧S,V做无条件commit"
+      ],
+      "expected_result": "不得覆盖并发更新",
+      "design_result": "cas_with_version校验, 失败重读",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-002",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "恢复中DENIED被并发设置"
+      ],
+      "actors": [
+        "恢复线程",
+        "B(DENIED)"
+      ],
+      "execution_steps": [
+        "B设DENIED=1; 恢复提交新state"
+      ],
+      "expected_result": "恢复不得覆盖DENIED",
+      "design_result": "build_new_state取DENIED并集, CAS失败重读保留DENIED",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-003",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "证据含UNKNOWN事务"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复将UNKNOWN事务视为完成并重建count=0"
+      ],
+      "expected_result": "必须DENY",
+      "design_result": "compute_allowed: has_unknown_transactions -> False",
+      "evidence_refs": "CRASH-RECOVERY-PROTOCOL.md §5/§6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-004",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "共享介质, 旧写入者存活"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复重置共享计数器为0"
+      ],
+      "expected_result": "必须DENY",
+      "design_result": "compute_allowed: all_old_writers_excluded -> False",
+      "evidence_refs": "CRASH-RECOVERY-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-005",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "denied_evidence读取与提交之间TOCTOU"
+      ],
+      "actors": [
+        "恢复线程",
+        "B"
+      ],
+      "execution_steps": [
+        "恢复读DENIED=0; B设DENIED=1; 恢复提交"
+      ],
+      "expected_result": "DENIED不可被覆盖",
+      "design_result": "提交前复核DENIED位取并集, CAS原子",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-006",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "证据冲突(同一事务矛盾记录)"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "恢复假设已提交"
+      ],
+      "expected_result": "必须DENY",
+      "design_result": "compute_allowed: conflicting_records -> False",
+      "evidence_refs": "CRASH-RECOVERY-PROTOCOL.md §5/§7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-RECOV-007",
+      "category": "RECOVERY_CAS",
+      "preconditions": [
+        "恢复者崩溃后重启"
+      ],
+      "actors": [
+        "恢复线程"
+      ],
+      "execution_steps": [
+        "重新执行恢复"
+      ],
+      "expected_result": "幂等, 无副作用",
+      "design_result": "CAS未提交则无变化, 重复恢复幂等",
+      "evidence_refs": "RECOVERY-CAS-PROTOCOL.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-001",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "count=5, gate=OPEN, frozen=0, DENIED=0"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A用 nv=cur+(1<<1) 做准入"
+      ],
+      "expected_result": "禁止整字算术, 必须field_cas",
+      "design_result": "field_cas(count_delta=+1) 掩码清除+移位写入",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §3",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-002",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "count字段含非法位"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A用整字+1更新count"
+      ],
+      "expected_result": "不得污染frozen/DENIED",
+      "design_result": "field_cas掩码隔离, 非法位被清除不扩散",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §5",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-003",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "count=32767"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A准入"
+      ],
+      "expected_result": "拒绝OVERFLOW, 不溢出到frozen",
+      "design_result": "admit前置count>=MAX -> OVERFLOW",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-004",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "count=0"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A退出"
+      ],
+      "expected_result": "拒绝UNDERFLOW",
+      "design_result": "release前置count==0 -> UNDERFLOW",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-005",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "gate=CLOSED"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A准入"
+      ],
+      "expected_result": "拒绝GATE_CLOSED",
+      "design_result": "admit前置gate==0 -> GATE_CLOSED",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-006",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "DENIED=1"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A准入"
+      ],
+      "expected_result": "拒绝DENIED",
+      "design_result": "admit前置DENIED==1 -> DENIED",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §6",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    },
+    {
+      "case_id": "B37-FIELD-007",
+      "category": "FIELD_OPS",
+      "preconditions": [
+        "CAS连续失败8次"
+      ],
+      "actors": [
+        "A"
+      ],
+      "execution_steps": [
+        "A继续重试"
+      ],
+      "expected_result": "返回LIVELOCK, 不无限重试",
+      "design_result": "MAX_CAS_RETRY=8 -> LIVELOCK降级",
+      "evidence_refs": "ADMISSION-FIELD-OPERATIONS.md §7",
+      "verification_method": "STATIC_DEDUCTION",
+      "requires_runtime_verification": false,
+      "status": "PASS"
+    }
+  ]
+}
