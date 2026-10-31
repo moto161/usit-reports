@@ -1,0 +1,38 @@
+# USIT-STAGE-B-DESIGN-05.25 ZIP 外部回执（ZIP-RECEIPT）
+
+> 本文件**不纳入 DELIVERY.zip**，记录 ZIP 自身哈希与完整解压核验结果，避免自引用循环。
+
+## 1. ZIP 自身
+
+| 文件 | 字节数 | SHA-256 |
+|------|--------|---------|
+| USIT-STAGE-B-DESIGN-05.25-DELIVERY.zip | 26109 | 800b245abc1159b475ce256e68e703ccffcd67284eb01115d3f26d714f38df0d |
+
+## 2. ZIP 内 10 文件最终哈希与 CRC（真实解压后重算）
+
+| 文件 | 字节数 | SHA-256 | CRC-32 |
+|------|--------|---------|--------|
+| USIT-STAGE-B-DESIGN-05.25.md | 37523 | 9d11263fb871ca72dd5f9b217f515e810dba86dbe44a380dd9ca8aaafcbac7b0 | 3299c2b8 |
+| USIT-STAGE-B-DESIGN-05.25-ISSUES.md | 2039 | 8ee5be9e2cde3e9daabbdc3322b5b92f5b39c1dacc3ec6975253a04392b3cb2e | f5495eb4 |
+| USIT-STAGE-B-DESIGN-05.25-DIFF.md | 2894 | e6a139d70aae57023e45cee84337ed6ce45151b23b2c027d077008c6edb0ce7b | 6fdbbdf0 |
+| USIT-STAGE-B-DESIGN-05.25-CROSS-REVIEW.md | 1736 | 2e37c05d2ce28b3c94edbb51a78430fcb928a9127c70dbd703b044021de8a922 | 92674f6f |
+| USIT-STAGE-B-DESIGN-05.25-EXECUTION-REPORT.md | 4204 | 6751c15d8cc0ca1a1f473b497ef0bfaa9e015f5eb5a6d8e17a89091946770050 | 1e5a4f34 |
+| USIT-STAGE-B-DESIGN-05.25-HASH-MANIFEST.md | 1882 | bed1233cb0c6c064c0c5746bbef7e600640854e483db7b847437a38b7a3232b2 | a52e4700 |
+| USIT-STAGE-B-DESIGN-05.25-HASH-RECEIPT.md | 1875 | 2318dc470b997d1cd16746a756a1a37a75d93097bd0ce2d8770d6e189fe1e297 | c938b401 |
+| usit_source_baseline_05.25_pre.txt | 2465 | c2fb7206d60a1fb1cf05ba6d479e23beb2d8d7d3a851196c61efacfd20ba0c3f | 3bd75674 |
+| usit_source_baseline_05.25_post.txt | 2466 | 6e928d5d5119b5a31c1d9a2c82c77df6677a3f25245c571d0c23280f73093161 | 068f8df8 |
+| usit_source_baseline_05.25_diff.txt | 885 | d3609b8c817d2e00cafaa1a0e2abf4e6280af3b5a353490391a80fcbd8f78db6 | 259b777b |
+
+## 3. 核验结论
+
+- ZIP 独立解压到全新目录 `_verify/`；
+- 10 个文件逐字节与源文件比对 **全部 MATCH**；
+- CRC-32 由 unzip 校验通过；
+- 文件数量、名称、字节数一致，无缺失/额外/重复；
+- 无路径穿越、大小写冲突、符号链接、目录条目、敏感信息、临时文件、旧版本。
+
+**ZIP 独立解压核验：PASS。**
+
+核验时间：2026-10-31（GMT+8）
+核验机器：Windows（Python 3.12.15）
+解压工具：Info-ZIP unzip；哈希：GNU sha256sum；比对：GNU cmp

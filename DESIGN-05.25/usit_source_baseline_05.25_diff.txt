@@ -1,0 +1,17 @@
+# USIT source baseline DIFF (05.25) — PRE vs POST (content, headers excluded)
+# collection command: find usit -type f -name '*.py' | sort | while read f; do sha256sum + stat -c %s
+# workspace: C:/Users/Administrator/WorkBuddy/2026-10-15-22-09-47/usit_p0
+# git HEAD: N/A (workspace not a git repository)
+# tool: GNU sha256sum (coreutils), GNU stat
+# result: NO_DIFFERENCE — 25 files SHA-256 and byte counts identical
+
+=== content diff (excluding 3 header lines) ===
+(empty — no content difference)
+
+=== path set diff ===
+(empty — no added/removed/renamed)
+
+=== frozen files (historical baseline) ===
+scanner.py          58ba5f25483429ce7482ae1d852deabce6ea0490f2e106c6955c6ff5323b45e3  MATCH
+cli.py              879a3735838e183f41dd08054095b514ffc0e81e2b43776b75a77e25d138b8d9  MATCH
+file_understanding.py 71995a09da04427c028282cfeba17c6b12ebdbcae97796adc2998af7c455ce5b  MATCH
